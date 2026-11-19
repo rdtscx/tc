@@ -889,7 +889,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   var MODE_META = {
     stream: { name: '流式读取', short: '流式', badge: '精确', text: 'ReadableStream 逐块读取，字节与速度精确，需要目标站允许 CORS。' },
     xhr: { name: 'XHR 进度', short: 'XHR', badge: '兼容', text: '兼容性好，onprogress 直接统计已接收字节；单次最多 16MB 后自动断开重连，需要 CORS。' },
-    element: { name: '元素加载', short: '元素', badge: '估算', text: '用图片、视频或预加载标签产生流量，不要求 CORS；字节按资源类型估算，流量和速度不精确。' }
+    element: { name: '元素加载', short: '元素', badge: '估算', text: '用图片、视频或预加载标签产生流量，不要求 CORS；按资源类型估算（图片约 512KB/次、视频约 2MB/次），流量和速度不精确。' }
   };
 
   function setMode(mode, silent) {
