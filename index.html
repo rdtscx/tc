@@ -3,17 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>流量消耗器 · 在线流量测试与 519 条测速源</title>
-<meta name="description" content="可直接使用的在线流量消耗器：选择测速源、设置线程，实时统计下载流量与速度；内置 9 个站点的 519 条公开测速链接，可复制引用。">
-<meta name="theme-color" content="#f0fdfa">
+<title>流量消耗器 · 三种方式、整合资源链接与实时流量统计</title>
+<meta name="description" content="可直接使用的在线流量消耗器：流式读取、XHR 进度、元素加载三种方式，实时统计流量与速度；整合公开资源链接，可一键复制引用。">
+<meta name="theme-color" content="#f0fdfa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230d9488'/%3E%3Cpath d='M16 7v18M9 13l7-7 7 7M9 19l7 7 7-7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script>
 (function () {
-  try {
-    var saved = localStorage.getItem('traffic.theme');
-    var dark = saved ? saved === 'dark' : !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  } catch (e) {}
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  document.documentElement.setAttribute('data-theme', mq && mq.matches ? 'dark' : 'light');
 })();
 </script>
 <style>
@@ -51,10 +49,8 @@
   --muted-2: #7d8086;
   --border: #3d3f42;
   --border-strong: #4c4f54;
-  --blue: #2dd4bf;
-  --blue-strong: #5eead4;
   --brand: #ccfbf1;
-  --cyan: #22d3ee;
+  --cyan: #1e6983;
   --shadow: 0 18px 54px rgba(0, 0, 0, .38);
 }
 * { box-sizing: border-box; }
@@ -125,11 +121,12 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .brand-title { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; white-space: nowrap; }
 .brand-sub { display: block; margin-top: 1px; color: var(--muted-2); font-size: 9px; font-weight: 600; letter-spacing: .18em; white-space: nowrap; }
 .header-actions { display: flex; flex: 0 0 auto; align-items: center; }
-.theme-switch { height: 32px; display: inline-flex; align-items: center; padding: 3px; background: var(--page); border: 1px solid var(--border); border-radius: 9px; }
-[data-theme="dark"] .theme-switch { background: var(--surface-2); }
-.theme-switch button { height: 24px; min-width: 44px; padding: 0 9px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 12px; line-height: 24px; }
-.theme-switch button:hover { color: var(--blue); }
-.theme-switch button[aria-pressed="true"] { color: var(--brand); background: var(--surface); box-shadow: 0 1px 3px rgba(35, 52, 74, .12); }
+.mode-switch { height: 32px; display: inline-flex; align-items: center; padding: 3px; background: var(--page); border: 1px solid var(--border); border-radius: 9px; }
+[data-theme="dark"] .mode-switch { background: var(--surface-2); }
+.mode-switch-label { padding: 0 6px 0 5px; color: var(--muted-2); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
+.mode-switch button { height: 24px; min-width: 44px; padding: 0 8px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 11.5px; line-height: 24px; white-space: nowrap; }
+.mode-switch button:hover { color: var(--blue); }
+.mode-switch button.active { color: #fff; background: var(--blue); box-shadow: 0 1px 3px rgba(13, 148, 136, .25); }
 .repo-link {
   display: inline-flex;
   align-items: center;
@@ -164,11 +161,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   background: linear-gradient(90deg, #0d9488, #09c2de 50%, transparent);
   border-radius: 0 0 2px 2px;
 }
-.eyebrow { display: flex; align-items: center; color: var(--blue); font-size: 10px; font-weight: 700; letter-spacing: .2em; }
-.eyebrow::before { content: ""; width: 20px; height: 2px; margin-right: 8px; background: var(--blue); border-radius: 2px; }
-.tool-head h1 { margin: 8px 0 0; color: var(--brand); font-size: 32px; font-weight: 800; line-height: 1.12; letter-spacing: -.04em; }
-.tool-head h1 .dot { color: var(--cyan); }
-.tool-head p { max-width: 660px; margin: 7px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.7; }
 .control-label { display: flex; align-items: center; justify-content: space-between; height: 28px; margin-top: 14px; color: var(--text); font-size: 13px; font-weight: 600; }
 .control-hint { color: var(--muted-2); font-size: 11px; font-weight: 400; }
 .source-picker { position: relative; }
@@ -301,6 +293,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .custom-row input:focus { border-color: var(--blue); }
 .custom-row .btn { margin-left: 6px; }
+.mode-note { display: flex; align-items: flex-start; margin-top: 8px; padding: 8px 10px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; font-size: 11.5px; line-height: 1.55; }
+.mode-note.is-estimate { background: rgba(230, 162, 60, .06); border-color: rgba(230, 162, 60, .38); }
+.mode-badge { flex: 0 0 auto; margin-right: 7px; padding: 1px 6px; color: var(--blue); background: rgba(13, 148, 136, .08); border: 1px solid rgba(13, 148, 136, .18); border-radius: 5px; font-size: 9.5px; font-weight: 700; line-height: 16px; white-space: nowrap; }
+.mode-note.is-estimate .mode-badge { color: var(--amber); background: rgba(230, 162, 60, .08); border-color: rgba(230, 162, 60, .28); }
+.mode-text { min-width: 0; }
 .settings-row { display: flex; align-items: flex-start; margin-top: 12px; }
 .thread-box { flex: 1; min-width: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .limit-box { flex: 0 0 208px; margin-left: 10px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
@@ -325,6 +322,10 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .limit-line input:focus { border-color: var(--blue); }
 .limit-line span { flex: 0 0 auto; margin-left: 6px; color: var(--muted-2); font-size: 11px; }
+.settings-hint { display: flex; align-items: center; justify-content: space-between; min-height: 22px; margin-top: 7px; color: var(--muted-2); font-size: 10.5px; line-height: 1.5; }
+.settings-hint span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reset-link { flex: 0 0 auto; margin-left: 10px; padding: 2px 0; color: var(--blue); background: transparent; border: 0; font-size: 10.5px; }
+.reset-link:hover { text-decoration: underline; }
 .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
 .metric-item {
   min-width: 0;
@@ -366,9 +367,27 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .start-button:active { transform: scale(.98); }
 .start-icon { width: 42px; height: 42px; display: block; }
 .start-icon-stop { display: none; }
-.start-button.is-running { background: #f56c6c linear-gradient(145deg, #f56c6c, #ff8a8a); box-shadow: 0 3px 8px #f56c6c, inset 0 2px 3px #ff8a8a; }
+.start-button::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border: 2px solid transparent;
+  border-top-color: #09c2de;
+  border-right-color: rgba(9, 194, 222, .35);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.start-button.is-running { box-shadow: 0 5px 13px rgba(72, 91, 237, .38), inset 0 2px 3px #7180ff; }
+.start-button.is-running::after { opacity: 1; animation: run-orbit 1.35s linear infinite; }
 .start-button.is-running .start-icon-play { display: none; }
 .start-button.is-running .start-icon-stop { display: block; }
+.start-button.is-launching { animation: run-enter .28s cubic-bezier(.2, .8, .3, 1); }
+.start-button.is-stopping { animation: run-exit .22s ease-out; }
+@keyframes run-orbit { to { transform: rotate(360deg); } }
+@keyframes run-enter { 0% { transform: scale(.96); } 100% { transform: scale(1); } }
+@keyframes run-exit { 0% { transform: scale(1); } 50% { transform: scale(.97); } 100% { transform: scale(1); } }
 .chart-wrap { position: relative; height: 170px; margin-top: 6px; padding: 8px 10px 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .chart-wrap canvas { width: 100%; height: 100%; display: block; }
 .chart-legend { position: absolute; top: 8px; right: 12px; color: var(--muted-2); font-size: 9.5px; letter-spacing: .08em; }
@@ -396,6 +415,10 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .chip:hover { color: var(--blue); border-color: rgba(13, 148, 136, .42); }
 .chip.active { color: #fff; background: var(--blue); border-color: var(--blue); }
 .link-list { margin-top: 4px; }
+.lib-sort-note { margin-top: 1px; color: var(--muted-2); font-size: 10.5px; }
+.lib-group-title { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 2px; padding: 8px 2px 6px; color: var(--blue); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.lib-group-title:first-child { margin-top: 6px; }
+.lib-group-title span { color: var(--muted-2); font-size: 10px; font-weight: 400; letter-spacing: 0; }
 .lib-row { display: flex; align-items: center; padding: 9px 1px; border-bottom: 1px solid var(--border); }
 .lib-row:last-child { border-bottom: 0; }
 .lib-badge { flex: 0 0 auto; min-width: 34px; height: 24px; display: grid; place-items: center; padding: 0 5px; margin-right: 9px; color: var(--blue); background: rgba(13, 148, 136, .07); border: 1px solid rgba(13, 148, 136, .18); border-radius: 6px; font-size: 10px; font-weight: 700; }
@@ -447,9 +470,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .btn-sm { height: 26px; padding: 0 8px; font-size: 10.5px; line-height: 24px; border-radius: 6px; }
 .btn[disabled] { color: var(--muted-2); background: var(--surface-2); border-color: var(--border); cursor: not-allowed; opacity: .7; }
 .empty { padding: 40px 16px; color: var(--muted-2); text-align: center; font-size: 12.5px; }
-.site-footer { width: min(856px, calc(100% - 40px)); margin: 18px auto 0; padding-bottom: 24px; color: var(--muted-2); text-align: center; font-size: 11.5px; line-height: 1.8; }
-.site-footer a { color: var(--blue); text-decoration: none; }
-.site-footer a:hover { text-decoration: underline; }
 .toast {
   position: fixed;
   z-index: 90;
@@ -477,8 +497,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .page { width: calc(100% - 28px); padding-top: 12px; }
   .tool-card { padding: 20px 16px 18px; border-radius: 16px; }
   .tool-card::before { left: 16px; right: 16px; }
-  .tool-head h1 { font-size: 28px; }
   .settings-row { flex-direction: column; }
+  .thread-box { width: 100%; flex-basis: auto; }
   .limit-box { flex-basis: auto; width: 100%; margin: 8px 0 0 0; }
   .metric-item { padding: 10px 11px; }
   .metric-item + .metric-item { margin-left: 7px; }
@@ -489,13 +509,15 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .status-right { margin: 3px 0 0 0; }
   .library-card { padding: 18px 15px 14px; border-radius: 16px; }
   .lib-row { align-items: flex-start; }
+  .mode-switch-label { display: none; }
+  .mode-switch button { min-width: 38px; padding: 0 6px; font-size: 11px; }
+
   .lib-actions-cell { flex-direction: column; margin-top: 2px; }
   .lib-actions-cell .btn { margin: 0 0 4px 0; }
   .sites-card summary { padding: 15px 16px; }
   .sites-body { padding: 0 16px 14px; }
   .site-row { flex-wrap: wrap; }
   .site-actions { width: 100%; margin: 6px 0 0 46px; }
-  .site-footer { width: calc(100% - 28px); }
   .custom-row .btn { padding: 0 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -505,7 +527,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 </head>
 <body>
 <header class="app-header" id="appHeader">
-  <a class="brand" href="https://github.com/rdtscx/traffic-consumer" target="_blank" rel="noopener">
+  <a class="brand" href="https://github.com/rdtscx/tc" target="_blank" rel="noopener">
     <span class="brand-mark" aria-hidden="true">⇅</span>
     <span class="brand-copy">
       <span class="brand-title">流量消耗器</span>
@@ -513,25 +535,21 @@ button:focus-visible, input:focus-visible, a:focus-visible {
     </span>
   </a>
   <div class="header-actions">
-    <div class="theme-switch" role="group" aria-label="外观模式">
-      <button type="button" data-theme-btn="light" aria-pressed="false">明亮</button>
-      <button type="button" data-theme-btn="dark" aria-pressed="false">黑暗</button>
+    <div class="mode-switch" role="group" aria-label="下载方式">
+      <span class="mode-switch-label">下载</span>
+      <button type="button" data-mode="stream" class="active" aria-pressed="true" title="流式读取（fetch + ReadableStream）：精确统计，需要 CORS">流式</button>
+      <button type="button" data-mode="xhr" aria-pressed="false" title="XHR 进度事件：兼容性好，需要 CORS">XHR</button>
+      <button type="button" data-mode="element" aria-pressed="false" title="元素加载：无需 CORS，流量为估算">元素</button>
     </div>
-    <a class="repo-link" href="https://github.com/rdtscx/traffic-consumer" target="_blank" rel="noopener">GitHub</a>
+    <a class="repo-link" href="https://github.com/rdtscx/tc" target="_blank" rel="noopener">GitHub</a>
   </div>
 </header>
 
 <main class="page">
   <section class="tool-card">
-    <div class="tool-head">
-      <div class="eyebrow">NETWORK TRAFFIC TEST</div>
-      <h1>流量消耗器<span class="dot">.</span></h1>
-      <p>选择测速源、设置线程后开始，浏览器会持续下载并把真实接收字节统计到下方。所有请求在你当前设备本地完成，不经过本站服务器。</p>
-    </div>
-
     <div class="control-label">
       <span>测速源</span>
-      <span class="control-hint" id="sourceCount">已载入全部测速链接</span>
+      <span class="control-hint" id="sourceCount">已载入全部资源链接</span>
     </div>
     <div class="source-picker">
       <button class="source-trigger" id="sourceTrigger" type="button" aria-expanded="false" aria-haspopup="listbox">
@@ -546,7 +564,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
       </button>
       <div class="source-popover" id="sourcePopover" hidden>
         <div class="popover-search">
-          <input id="sourceSearch" type="search" placeholder="搜索 519 条测速链接（名称 / 域名）" autocomplete="off" aria-label="搜索测速源">
+          <input id="sourceSearch" type="search" placeholder="搜索 519 条资源链接（名称 / 域名 / 类型）" autocomplete="off" aria-label="搜索测速源">
         </div>
         <div class="source-options" id="sourceOptions" role="listbox" aria-label="测速源列表"></div>
       </div>
@@ -557,6 +575,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
       <button class="btn" id="useCustom" type="button">使用</button>
       <button class="btn" id="copyCurrent" type="button">复制</button>
       <a class="btn" id="openCurrent" href="#" target="_blank" rel="noopener">打开</a>
+    </div>
+
+    <div class="mode-note" id="modeNote">
+      <span class="mode-badge" id="modeBadge">流式读取</span>
+      <span class="mode-text" id="modeText">ReadableStream 逐块读取，字节与速度精确，需要目标站允许 CORS。</span>
     </div>
 
     <div class="settings-row">
@@ -574,6 +597,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
           <span>MB</span>
         </div>
       </div>
+    </div>
+
+    <div class="settings-hint">
+      <span id="saveHint">更改会自动保存在本机</span>
+      <button class="reset-link" id="resetSettings" type="button">恢复默认</button>
     </div>
 
     <div class="metric-grid">
@@ -614,16 +642,18 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 
   <section class="library-card">
     <div class="section-head">
-      <h2>全部测速链接</h2>
+      <h2>全部资源链接</h2>
       <span id="libraryCount">519 条</span>
     </div>
-    <p class="section-desc">整理自 9 个站点的公开页面。点击「使用」载入上方测试器，或复制链接到其他工具中自行引用。</p>
+    <p class="section-desc">整理自 9 个站点的公开页面，已按「资源类型 → 来源站点 → 名称」排序，同类型资源集中展示。点击「使用」载入上方测试器，或复制链接自行引用。</p>
     <div class="lib-toolbar">
       <div class="lib-search">
         <span style="color:var(--muted-2);font-size:14px;line-height:1">⌕</span>
-        <input id="librarySearch" type="search" placeholder="搜索名称、域名或来源站点…" autocomplete="off" aria-label="搜索测速链接">
+        <input id="librarySearch" type="search" placeholder="搜索名称、域名、类型或来源站点…" autocomplete="off" aria-label="搜索资源链接">
       </div>
-      <div class="chips" id="libraryChips"></div>
+      <div class="chips" id="kindChips" aria-label="资源类型筛选"></div>
+      <div class="chips" id="libraryChips" aria-label="来源站点筛选"></div>
+      <div class="lib-sort-note">排序：资源类型 → 来源站点 → 名称</div>
       <div class="lib-actions">
         <button class="btn btn-sm" id="copyFiltered" type="button">复制当前筛选结果</button>
         <button class="btn btn-sm" id="copyAllLinks" type="button">复制全部 519 条</button>
@@ -639,15 +669,10 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   </details>
 </main>
 
-<footer class="site-footer">
-  <div>整理自 <a href="https://xydh.fun/x1234" target="_blank" rel="noopener">xydh.fun/x1234</a>「流量消耗器」分类 · 页面风格参考 <a href="https://net.whiteyun.com/" target="_blank" rel="noopener">白云网络面板</a></div>
-  <div>测速链接由各站点公开页面提取，可能随站点更新变化 · 托管于 GitHub Pages</div>
-</footer>
-
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whiteyun.com","url":"https://net.whiteyun.com/","impl":"原生 JS · fetch 带 Range + ReadableStream 流式读取","tags":["流式读取","多线程","智能分流","Range"],"desc":"按地区自动分流的多节点面板，默认 10 线程并发，逐块统计真实接收字节；内置节点健康检测、历史记录、流量上限与多语言/深浅主题。","threads":"默认 10 线程（1–10 可选）","defaults":[{"label":"智能高速 · CacheFly 100MB","url":"https://cachefly.cachefly.net/100mb.test"}],"sources":[{"label":"智能高速 · 多节点持续","url":"https://cachefly.cachefly.net/100mb.test","group":"高速推荐"},{"label":"天翼云桌面 · 83 MB","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe","group":"国内线路"},{"label":"爱奇艺高速 · 89 MB","url":"https://cdndata.video.iqiyi.com/cdn/pca/20260818/14.8.0.10198/channel/1787041585340/IQIYIsetup_app.exe","group":"国内线路"},{"label":"Cloudflare 95MB · 95.4 MB","url":"https://speed.cloudflare.com/__down?bytes=99999999","group":"全球 CDN"},{"label":"Steam Akamai · 10.3 MB","url":"https://cdn.akamai.steamstatic.com/steam/apps/1063730/extras/NW_Sword_Sorcery_2.gif","group":"全球 CDN"},{"label":"Bunny CDN 100MB · 100 MB","url":"https://test.b-cdn.net/100MB.bin","group":"全球 CDN"},{"label":"Bunny CDN 1GB · 1 GB","url":"https://test.b-cdn.net/1000MB.bin","group":"全球 CDN"},{"label":"DataPacket 香港 · 100 MB","url":"https://hkg.download.datapacket.com/100mb.bin","group":"亚太区域"},{"label":"DataPacket 新加坡 · 100 MB","url":"https://sgp.download.datapacket.com/100mb.bin","group":"亚太区域"},{"label":"DataPacket 东京 · 100 MB","url":"https://tyo.download.datapacket.com/100mb.bin","group":"亚太区域"},{"label":"Vultr 东京 · 100 MB","url":"https://hnd-jp-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域"},{"label":"Vultr 大阪 · 100 MB","url":"https://osk-jp-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域"},{"label":"Vultr 首尔 · 100 MB","url":"https://sel-kor-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域"},{"label":"Vultr 新加坡 · 100 MB","url":"https://sgp-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域"},{"label":"Vultr 悉尼 · 100 MB","url":"https://syd-au-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域"},{"label":"Vultr 东京 1GB · 1 GB","url":"https://hnd-jp-ping.vultr.com/vultr.com.1000MB.bin","group":"亚太区域"},{"label":"Vultr 新加坡 1GB · 1 GB","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin","group":"亚太区域"},{"label":"DataPacket 法兰克福 · 100 MB","url":"https://fra.download.datapacket.com/100mb.bin","group":"欧洲区域"},{"label":"Vultr 阿姆斯特丹 · 100 MB","url":"https://ams-nl-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域"},{"label":"Vultr 法兰克福 · 100 MB","url":"https://fra-de-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域"},{"label":"Vultr 伦敦 · 100 MB","url":"https://lon-gb-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域"},{"label":"Vultr 巴黎 · 100 MB","url":"https://par-fr-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域"},{"label":"Vultr 法兰克福 1GB · 1 GB","url":"https://fra-de-ping.vultr.com/vultr.com.1000MB.bin","group":"欧洲区域"},{"label":"DataPacket 洛杉矶 · 100 MB","url":"https://lax.download.datapacket.com/100mb.bin","group":"美洲区域"},{"label":"DataPacket 纽约 · 100 MB","url":"https://nyc.download.datapacket.com/100mb.bin","group":"美洲区域"},{"label":"DataPacket 圣保罗 · 100 MB","url":"https://sao.download.datapacket.com/100mb.bin","group":"美洲区域"},{"label":"Vultr 洛杉矶 · 100 MB","url":"https://lax-ca-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域"},{"label":"Vultr 西雅图 · 100 MB","url":"https://wa-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域"},{"label":"Vultr 新泽西 · 100 MB","url":"https://nj-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域"},{"label":"Vultr 达拉斯 · 100 MB","url":"https://tx-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域"},{"label":"Vultr 亚特兰大 · 100 MB","url":"https://ga-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域"},{"label":"DataPacket 伊斯坦布尔 · 100 MB","url":"https://ist.download.datapacket.com/100mb.bin","group":"中东非洲"},{"label":"DataPacket 约翰内斯堡 · 100 MB","url":"https://jnb.download.datapacket.com/100mb.bin","group":"中东非洲"},{"label":"TestFile 100MB · 100 MB","url":"https://dl.testfile.cc/100mb.dat","group":"文件测试"},{"label":"TestFile 200MB · 200 MB","url":"https://dl.testfile.cc/200mb.dat","group":"文件测试"},{"label":"Gcore 香港 · 100 MB 流","url":"https://hk2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 新加坡 · 100 MB 流","url":"https://sg1-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 东京 · 100 MB 流","url":"https://cc1-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 首尔 · 100 MB 流","url":"https://kx-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 阿姆斯特丹 · 100 MB 流","url":"https://am3-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 法兰克福 · 100 MB 流","url":"https://fr5-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 伦敦 · 100 MB 流","url":"https://thn2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 迪拜 · 100 MB 流","url":"https://eti-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 洛杉矶 · 100 MB 流","url":"https://la2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"Gcore 纽约 · 100 MB 流","url":"https://ny2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速"},{"label":"LibreSpeed 阿姆斯特丹 · 100 MB 流","url":"https://ams.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"LibreSpeed 法兰克福 · 100 MB 流","url":"https://fra.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"LibreSpeed 伦敦 · 100 MB 流","url":"https://lon.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"LibreSpeed 洛杉矶 · 100 MB 流","url":"https://la.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"LibreSpeed 纽约 · 100 MB 流","url":"https://nyc.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"LibreSpeed 赫尔辛基 · 100 MB 流","url":"https://www.librespeed.fi/backend/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"LibreSpeed 布拉格 · 100 MB 流","url":"https://speedtest.cesnet.cz/backend/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"LibreSpeed 罗马 · 100 MB 流","url":"https://st-be-rm2.infra.garr.it/garbage.php?ckSize=100&cors=true","group":"社区测速"},{"label":"爱奇艺 CDN · 32 MB","url":"https://app.iqiyi.com/lequ/20260707/qiyiguo_official16.7.0.apk","group":"咕噜测速"},{"label":"阿里云 CDN 视频 · 22 MB","url":"https://cloud.video.taobao.com/vod/ob_elzAR0USI6YAmmXUvGkOsCWV-ZbhN1JGSkbBYxoc.mp4","group":"咕噜测速"},{"label":"阿里云 CDN 图片 · 264 KB","url":"https://img.alicdn.com/imgextra/i4/O1CN01ayOUUU1eYvHzJ2FA4_!!6000000003884-0-tps-5760-2080.jpg","group":"咕噜测速"},{"label":"咪咕视频 · 379 KB","url":"https://img.cmvideo.cn/sports/uploadImages/2025/12/15/1000000013861061b14e.png","group":"咕噜测速"},{"label":"美团外卖 · 26 MB","url":"https://s3plus.meituan.net/v1/mss_f5ecef526b384cbaa1117230d53b4bd6/smart/%E6%96%B0%E5%B0%8F%E9%BB%84%E8%9C%82_xflyci.mp4","group":"咕噜测速"},{"label":"58 同城图片 · 579 KB","url":"https://img.58cdn.com.cn/git/teg-app-fe/vr-house-viewer-V5-test/static/v5.8.7/loc_sprite_60page_556_d00c8bea.png","group":"咕噜测速"},{"label":"58 同城视频 · 11 MB","url":"https://bhvideo008.58wos.com.cn/SaQpOnMlKSz/sydctransform/8910dd89-37cb-4c90-a3e2-69273fad633c.1763882874868.51544-1790848043.mp4","group":"咕噜测速"},{"label":"七猫中文网 · 2.7 MB","url":"https://cdn.qimao.com/bookimg/zww/upload/avatar/0/1690174000789916.png","group":"咕噜测速"},{"label":"金山毒霸 · 1.1 MB","url":"https://www.ijinshan.com/vip/vip/img/secret-clean.a9684b3.png","group":"咕噜测速"},{"label":"小红书 · 732 KB","url":"https://fe-static.xhscdn.com/formula-static/spectrum/public/img/display-img.5e021ab.png","group":"咕噜测速"},{"label":"鲁大师安装包 · 141 MB","url":"https://cdn-file-ssl-pc.ludashi.com/pc/ldsstu/premium/ludashisetup.exe","group":"咕噜测速"},{"label":"鲁大师资源 · 1.3 MB","url":"https://cdn-file.ludashi.com/web/lds_laboratory_new/static/media/fluent.98738dbc27a6da98028f.gif","group":"咕噜测速"},{"label":"讯飞星火 · 5.0 MB","url":"https://openres.xfyun.cn/xfyundoc/2025-07-13/3d97e261-2164-4d65-9a33-ec0eaeb77ff5/1752405451147/PingFangSC-Regular.woff2","group":"咕噜测速"},{"label":"斗鱼 TV · 548 KB","url":"https://sta-op.douyucdn.cn/douyu-vrp-admin/2025/12/12/4c16574ed9e337ff56203126a971e1f0.jpg/cwebp","group":"咕噜测速"},{"label":"百合网 · 835 KB","url":"https://images10.baihe.com/login/201412/bj.jpg","group":"咕噜测速"},{"label":"探探网 · 891 KB","url":"https://static.tancdn.com/pe-webplatform/7GoUBNUgYZLB-C8sJFWh7Ksp.png","group":"咕噜测速"},{"label":"陌陌网 · 14 MB","url":"https://s.momocdn.com/s1/u/babbigjacc/momo-website/video/momoTVC-1024-new.mp4","group":"咕噜测速"},{"label":"同程旅行动图 · 1.3 MB","url":"https://file.40017.cn/tcweb/pc/img/index/dt-rocket-icon.gif","group":"咕噜测速"},{"label":"腾讯视频 1 · 7.4 MB","url":"https://gif.media.qpic.cn/mzc00200znyfa5u_415_237_1765789929765/0","group":"咕噜测速"},{"label":"腾讯视频 2 · 8.1 MB","url":"https://vcover-vt-pic.puui.qpic.cn/vcover_vt_pic/0/mzc00200vbafupy1766113338801/0","group":"咕噜测速"},{"label":"华为云 CDN 高速 · 26 MB","url":"https://res-video.hc-cdn.com/cloudbu-site/china/zh-cn/WeLink/0416/1618543170266000950.mp4","group":"咕噜测速"},{"label":"小米影像视频 1 · 49 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/mi-mall/e8b84f9055fc9278399f2d7367ac24d0.mp4","group":"咕噜测速"},{"label":"小米影像视频 2 · 19 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/mi-mall/87842e2015e55d816588da5c591d75f0.mp4","group":"咕噜测速"},{"label":"小米小爱同学 · 23 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/aife/ai-hyper-xiaoai-fe/build/static/media/video1.02c63230.mp4","group":"咕噜测速"},{"label":"小米产品视频 · 18 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/product-images/new-product-images/xiaomi-17-pro_28479/media/LofIC.mp4","group":"咕噜测速"},{"label":"夸克 / UC · 69 MB","url":"https://image.uc.cn/s/uae/g/3o/broccoli/resource/202512/fe2b35d3a8a02cf4.mp4","group":"咕噜测速"},{"label":"电信邮箱 · 278 KB","url":"https://189mail.dlife.cn/web/webmail/jsp/189misc/client/images/bg_left.238fe8c4.png","group":"咕噜测速"},{"label":"千图网 · 4.2 MB","url":"https://icon.qiantucdn.com/images/assets/2025-11_q_6927ba5e1d8d8_86.png","group":"咕噜测速"},{"label":"搜狐 TV · 211 KB","url":"https://photocdn.tv.sohu.com/img/20251203/vrsa_ver9971025.webp","group":"咕噜测速"},{"label":"网易游戏 · 3.0 MB","url":"https://g.fp.ps.netease.com/cg-image/file/69266e64c57280dc95d55a46102I2hmR07","group":"咕噜测速"},{"label":"网易云音乐 · 5.5 MB","url":"https://s5.music.126.net/static_public/5d2e7e0f4c302eee822efc3d_5d2e7e0f4c302eee822efc3f/27f10e613772ca9aa2cca89f35be6c17.mp4","group":"咕噜测速"},{"label":"OPPO 手机 · 4.8 MB","url":"https://msecfs.opposhop.cn/video-comment/20251122/728798a09fbd0f7697e26185286313341479038639_20251122014408_720.mp4","group":"咕噜测速"},{"label":"联想电脑 · 1.5 MB","url":"https://p4.lefile.cn/product/adminweb/2025/04/25/B4kyiylqKwSC9xZZNhYwbk3nm-8718.jpg","group":"咕噜测速"},{"label":"vivo 手机 · 9.8 MB","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/product/1761905418761/images/pc/appearance.webm","group":"咕噜测速"},{"label":"WPS 365 · 827 KB","url":"https://qn.cache.wpscdn.cn/encs/plus/img/footer-banner.new.3b49ee8.png","group":"咕噜测速"},{"label":"天翼云盘 · 4.0 MB","url":"https://cloud.dlife.cn/web/main/video/fast-banner.mp4","group":"咕噜测速"},{"label":"理想汽车 · 78 MB","url":"https://p.ampmake.com/lilibrary/hd/863473025131367/5426f9e9-b1d2-42dc-9c1b-56b2b386c9ab.mp4","group":"咕噜测速"},{"label":"特斯拉汽车 · 454 KB","url":"https://digitalassets-shop.tesla.cn/image/upload/f_auto,q_auto/v1/content/dam/tesla/CAR_ACCESSORIES/MODEL_3/INTERIOR/2057184-00-A_0_2000.jpg","group":"咕噜测速"},{"label":"360 图片 1 · 285 KB","url":"https://se2.360simg.com/t0102fc738fc2661fdf.jpg","group":"咕噜测速"},{"label":"360 图片 2 · 680 KB","url":"https://p3.ssl.qhimg.com/t110b9a9301ac4f37095210fc56.png","group":"咕噜测速"},{"label":"360 图片 3 · 9.4 MB","url":"https://p1.ssl.qhimg.com/t110b9a930136de37ef66d49549.png","group":"咕噜测速"},{"label":"有赞 CDN · 458 KB","url":"https://img01.yzcdn.cn/upload_files/2025/03/21/398a201eefaa5133b6566ce13d660117.jpg","group":"咕噜测速"},{"label":"今日头条 · 20 MB","url":"https://lf9-static.bytednsdoc.com/obj/eden-cn/uhbfnupkbps/video/earth_v6.mp4","group":"咕噜测速"},{"label":"拼多多 · 28 MB","url":"https://cd.pddpic.com/volantis-open/mobile-CI-tag/2025-12-16/3f0d9c696148843dafb0a10b27ccc0f6.apk","group":"咕噜测速"},{"label":"京东 APP · 128 MB","url":"https://storage.jd.com/jdmobile/JDMALL-PC2.apk","group":"咕噜测速"},{"label":"中国移动云盘新版 · 144 MB","url":"https://yun.mcloud.139.com/mCloudPc/v860/mCloud-8.6.0-001.exe","group":"咕噜测速"},{"label":"BootCDN · 2.2 MB","url":"https://www.bootcdn.cn/assets/js/libraries-bootcss.min.json","group":"咕噜测速"},{"label":"中国移动视频 · 38 MB","url":"https://obs-wx-ysj-xnl-pro-001.obs.cidc-rp-12.joint.cmecloud.cn/public/video/20250805-101631.mp4","group":"咕噜测速"},{"label":"同程旅行图片 · 2.1 MB","url":"https://pavo.elongstatic.com/i/ori/nw_000f9DQc.jpg","group":"咕噜测速"},{"label":"华为云测速 1 · 1.4 MB","url":"https://res-static.hc-cdn.cn/cloudbu-site/china/zh-cn/welink_guanwang/20220718-153150(WeLinkPC).png","group":"咕噜测速"},{"label":"华为云测速 2 · 449 KB","url":"https://res-static.hc-cdn.cn/cloudbu-site/china/zh-cn/active.webp","group":"咕噜测速"},{"label":"华为云测速 3 · 2.0 MB","url":"https://res-video.hc-cdn.com/cloudbu-site/china/zh-cn/yunying/token/banner-pc-03.mp4","group":"咕噜测速"},{"label":"百度云 CDN 1 · 4.9 MB","url":"https://now.bdstatic.com/store/v2/6a045a1/easy-landing/fce7099/product/tab1_mobileeae3c5.mp4","group":"咕噜测速"},{"label":"百度云 CDN 2 · 6.6 MB","url":"https://now.bdstatic.com/store/v2/6a045a1/easy-landing/fce7099/product/tab1_video56dd07.mp4","group":"咕噜测速"},{"label":"百度云 CDN 3 · 6.9 MB","url":"https://adsmind.ugdtimg.com/ads_svp_video__0bc3duaxyaabxaaeqh5veztrwhiepqoqc7ca.f140010.mp4","group":"咕噜测速"},{"label":"Cloudflare CDN 50MB · 48 MB","url":"https://speed.cloudflare.com/__down?bytes=50000000","group":"咕噜测速"},{"label":"中国移动云盘高速 1 · 118 MB","url":"https://yun.mcloud.139.com/mCloudPc/v832/mCloud_Setup-001.exe","group":"咕噜测速"},{"label":"中国移动云盘高速 2 · 2.4 GB","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip","group":"咕噜测速"},{"label":"咪咕爱看 · 2.5 MB","url":"https://img.aikan.miguvideo.com/publish/noms/2024/04/22/1O5MNLF3AN2JL.gif","group":"咕噜测速"},{"label":"搜狐视频 · 336 KB","url":"https://photocdn.tv.sohu.com/img/q_mini/20260301/frag_item_1772380307925_qo.webp","group":"咕噜测速"},{"label":"橙篇 AI · 短时文件","url":"https://edu-wenku.bdimg.com/v1/pc/aigc/big-square-img-1716650513807.png","group":"咕噜测速"},{"label":"芒果 TV · 2.1 MB","url":"https://img.shuziwenbo.cn/static/captain/_next/static/media/443a8609f096ffb6-s.p.ttf","group":"咕噜测速"},{"label":"哔哩哔哩 · 765 KB","url":"https://s1.hdslb.com/bfs/static/jinkela/long/font/HarmonyOS_Regular.d.woff2","group":"咕噜测速"},{"label":"豆包 AI · 2.0 MB","url":"https://lf-flow-web-cdn.doubao.com/obj/flow-doubao/doubao/chat/static/js/async/7359.ab07cdf0.js","group":"咕噜测速"},{"label":"乐视 TV 1 · 1.8 MB","url":"https://i0.letvimg.com/lc19_iscms/202404/18/19/28/8bd92ce0634a403bb62c79c2e17db8de.gif","group":"咕噜测速"},{"label":"乐视 TV 2 · 416 KB","url":"https://i3.letvimg.com/lc07_iscms/202311/21/14/57/61e544fc3e164462a3324a12d773a64e.jpg","group":"咕噜测速"},{"label":"抖音视频 · 2.6 MB","url":"https://lf-douyin-pc-web.douyinstatic.com/obj/douyin-pc-web/ies/douyin_web/66921.c56228db.js","group":"咕噜测速"},{"label":"猫眼演出 1 · 1.7 MB","url":"https://p1.pipi.cn/mediaplus/fantasy_perform_fe/e42958fc77e77e9fd1b7863810148f76001f3.png","group":"咕噜测速"},{"label":"猫眼演出 2 · 1.7 MB","url":"https://p1.pipi.cn/mediaplus/fantasy_perform_fe/e42958fc8b077e8dd425ce4b5a1dde0d4c360.png","group":"咕噜测速"},{"label":"虎牙直播 · 773 KB","url":"https://huyaimg.msstatic.com/cdnimage/upcoming/up_17682955298761_pic.jpg","group":"咕噜测速"},{"label":"YY 直播 · 1.0 MB","url":"https://emyms.bs2cdn.yy.com/rubiks-material/675bad380e1bce56c2be49ec.jpg","group":"咕噜测速"},{"label":"微盟 · 2.8 MB","url":"https://cdn2.weimob.com/saas/@assets/saas-fe-website-web-stc/_next/static/media/banner.c6ce7a1d.png","group":"咕噜测速"},{"label":"九秀直播 · 460 KB","url":"https://img1.imgtx.9xiuzb.com/upload/idcard/2026/01/26/107576832162920ihopyd5itp.jpg","group":"咕噜测速"},{"label":"企鹅直播 · 270 KB","url":"https://upstatic.qiecdn.com/upload/homeset/202201241426092718.png","group":"咕噜测速"},{"label":"战旗直播 · 984 KB","url":"https://img3.zhanqi.tv/uploads/2019/01/b0c82-2019011417081900437.png","group":"咕噜测速"}]},{"badge":"01","name":"来宝工具 · 流量消耗控制台","host":"labup.net","url":"https://labup.net/tools/network-traffic-test","impl":"React 工具页 · fetch + getReader 流式读取","tags":["流式读取","多线程"],"desc":"外部测速文件直连，不占本站带宽；默认 4 线程（1–32 可调），AbortController 停止，按峰值/平均速率与首包延迟统计。","threads":"默认 4 线程（1–32 可调）","defaults":[{"label":"Cloudflare Speed 10MB","url":"https://speed.cloudflare.com/__down?bytes=10485760"}],"sources":[{"label":"Cloudflare Speed Test","url":"https://speed.cloudflare.com/__down?bytes=10485760"},{"label":"咪咕视频（中国移动）","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg"},{"label":"移动云盘（中国移动）","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"腾讯云（微信 JS SDK）","url":"https://res.wx.qq.com/open/js/jweixin-1.6.0.js"},{"label":"哔哩哔哩（图片资源）","url":"https://static.hdslb.com/images/base/icons.png"},{"label":"百度网盘（安装包）","url":"https://issuecdn.baidupcs.com/issue/netdisk/yunguanjia/BaiduYunGuanjia_6.7.4.exe"},{"label":"阿里云（图片资源）","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png"},{"label":"华为官网（图片资源）","url":"https://consumer.huawei.com/content/dam/huawei-cbg-site/cn/mkt/huawei-cloud-service/appgallery/application-boutique-pc1.jpg"},{"label":"京东商城（APK）","url":"https://storage.jd.com/jdmobile/JDMALL-PC2.apk"},{"label":"GitHub（静态资源）","url":"https://github.githubassets.com/assets/optimizely-f41bb566674d.js"},{"label":"Linode 100MB（日本东京）","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin"},{"label":"Vultr 1GB（新加坡）","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin"}]},{"badge":"02","name":"网络面板 NetworkPanel","host":"net.netart.cn","url":"https://net.netart.cn/","impl":"Vue3 开源 NetworkPanel · fetch + getReader 流式读取","tags":["流式读取","多线程","自定义节点"],"desc":"开源 NetworkPanel（ljxi）部署版，默认 8 线程循环下载；支持自定义节点、NetworkPanelApi 动态解析与本地/Cloudflare 延迟检测。","threads":"默认 8 线程（可调）","defaults":[{"label":"和彩云（中国移动）","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"}],"sources":[{"label":"和彩云（中国移动）","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"天翼云桌面（中国电信）","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe"},{"label":"Cachefly","url":"https://web1.cachefly.net/speedtest/downloading"},{"label":"Cloudflare Speed 95MB","url":"https://speed.cloudflare.com/__down?bytes=99614720"},{"label":"Steam Akamai","url":"https://cdn.akamai.steamstatic.com/steam/apps/1063730/extras/NW_Sword_Sorcery_2.gif"},{"label":"Steam Cloudflare","url":"https://cdn.cloudflare.steamstatic.com/steam/apps/1063730/extras/NW_Sword_Sorcery_2.gif"},{"label":"Microsoft Akamai","url":"https://img-prod-cms-rt-microsoft-com.akamaized.net/cms/api/am/imageFileData/RW16Ptm"}]},{"badge":"03","name":"星芒工具箱 · 流量消耗器","host":"tool.starlumina.com","url":"https://tool.starlumina.com/tools/traffic-deplete.html","impl":"原生 JS · fetch 流式读取 + 跨域元素回退","tags":["流式读取","多线程","CORS 回退","后台运行"],"desc":"先探测 CORS，能流式读取时用 1–32 线程并发；跨域失败自动切换 img/video/script 元素加载并估算流量，支持后台音乐保活。","threads":"默认 1 线程（1–32 可调）","defaults":[{"label":"百度 CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk"}],"sources":[{"label":"百度CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk"},{"label":"阿里CDN","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png"},{"label":"腾讯CDN","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png"},{"label":"字节跳动","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png"},{"label":"网易","url":"https://pic-bucket.ws.126.net/photo/0003/2022-04-24/H5N2082C00AJ0003NOS.jpg"},{"label":"Vivo","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4"},{"label":"咪咕视频","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg"},{"label":"和彩云","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"天翼云","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/ff3e71dcc21152307f54700c62e5aef6"},{"label":"哔哩哔哩","url":"https://i2.hdslb.com/bfs/openplatform/202506/ndIMphTF1750406775833.png"},{"label":"Cachefly Test [Global]","url":"https://cachefly.cachefly.net/100mb.test"},{"label":"Cloudflare Speed [Global]","url":"https://speed.cloudflare.com/__down?bytes=1073741824"}]},{"badge":"04","name":"流量消耗器 by 紫曦","host":"net.zixiwu.cn","url":"https://net.zixiwu.cn/","impl":"Vue2 + axios · onDownloadProgress 统计进度","tags":["axios 进度","多线程"],"desc":"10 线程并发请求，用 axios 下载进度事件累计已接收字节；infinite 模式循环发起，随机参数避免缓存命中。","threads":"默认 10 线程","defaults":[{"label":"和彩云 1","url":"https://yun.mcloud.139.com/mCloud/mCloud_11.2.2_24112201_000.apk"}],"sources":[{"label":"和彩云1","url":"https://yun.mcloud.139.com/mCloud/mCloud_11.2.2_24112201_000.apk"},{"label":"和彩云2","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"咪咕快游1","url":"https://plaza.cmgame.com:8443/resource/upload/records/tvapk/apk/6.9.1.0_0_5132_2021-12-29_10011000000_xw_sec_signed_signed_signed.apk"},{"label":"咪咕快游2","url":"https://pc-dl.migufun.com:8443/channelpackage/mgame-2djSBy.exe"},{"label":"咪咕快游3","url":"https://freeserver.migufun.com/resource/beta/video/system/20210924112351666.mp4"},{"label":"天翼云1","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/5961fa22ee369eba433da6b0247eb11f"},{"label":"天翼云2","url":"https://desk.ctyun.cn:8999/desktop-prod/software/android_client/20/64/102010101/clouddesktoc_phone_2.1.1_452_prod_102010101_2.1.1_signed.apk"},{"label":"天翼云3-翼加密客户端","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/50218cd4d2286623049e374061cffd0e"},{"label":"天翼云应用市场","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/ff3e71dcc21152307f54700c62e5aef6"},{"label":"联通电视","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20230215/1625752132487675906.mp4"},{"label":"联通官网静态资源1","url":"https://m1.ad.10010.com/small_video/uploadImg/1669798519261.png"},{"label":"爱奇艺","url":"https://bdcdncnc.inter.71edge.com/cdn/pca/20231130/10.9.1.7348/channel/1701328986348/IQIYIsetup_z43.exe"},{"label":"阿里图片CDN域名加速","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png"},{"label":"支付宝开放平台1","url":"https://mdn.alipayobjects.com/ind_developertool/afts/file/A*fSAmSbgxLosAAAAAAAAAAAAADlx-AQ?af_fileName=AlipayKeyTool-2.0.3.dmg"},{"label":"支付宝开放平台2","url":"https://gw.alipayobjects.com/render/p/yuyan/180020010001210191/umi.9f3e4149.js"},{"label":"阿里系Gw","url":"https://gw.alicdn.com/tfscom/TB1fASCxhjaK1RjSZKzXXXVwXXa.jpg"},{"label":"腾讯游戏-静态资源加速1","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561"},{"label":"Wegame-静态资源加速","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png"},{"label":"京东商城图片CDN服务","url":"https://img10.360buyimg.com/img/jfs/t1/176863/16/41608/14330/668e3421F64b41094/15c9d9130b980a51.png"},{"label":"逆水寒官网静态资源","url":"https://n.v.netease.com/2024/0923/42971accb0826a176e4a6b7a3fdaccff.mp4"},{"label":"MCLauncher网易版(阿里CDN)","url":"https://x19.gdl.netease.com/MCLauncher_1.14.0.36188.exe"},{"label":"网易公开课(白云山CDN)","url":"https://mov.bn.netease.com/open-movie/nos/mp4/2018/08/02/SDN92R2SB_sd.mp4"},{"label":"VIVO官网静态资源","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4"},{"label":"OPPP商城静态资源","url":"https://dsfs.oppo.com/oppo/shop-pc-v2/main/js/9fb472f.js"},{"label":"VIVO应用商店","url":"https://imgwsdl.vivo.com.cn/appstore/developer/soft/20210125/202101251051528awqa.apk"},{"label":"字节CDN资源","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png"},{"label":"上海灵羊1","url":"https://activity.hdslb.com/blackboard/static/20210604/4d40bc4f98f94fbc71c235832ce3efd4/hJEhL6jGOY.zip"},{"label":"华为MateXT素材","url":"https://consumer.huawei.com/content/dam/huawei-cbg-site/cn/mkt/pdp/phones/mate-xt-ultimate-design/videos/hero/huawei-mate-xt-ultimate-design-kv.mp4"},{"label":"Smartisan OS 官网公共资源","url":"https://static.smartisanos.cn/common/video/production/ocean/os-1-1710.mp4"},{"label":"拼多多H5官网静态资源-图像小文件","url":"https://funimg.pddpic.com/c3affbeb-9b31-4546-b2df-95b62de81639.png.slim.png"},{"label":"拼多多IMG/CDN资源文件","url":"https://t00img.yangkeduo.com/chat/images/2022-12-12/79e0a4684de85c7b59f797819260be98.jpeg"},{"label":"CCTV","url":"https://dh5.cntv.myhwcdn.cn/asp/h5e/hls/1200/0303000a/3/default/ec48b9f8c76e49af842d4942914ad663/1.ts"},{"label":"AcFun","url":"https://cdn.aixifan.com/downloads/AcFun-acfunh5-release-6.62.0.1238_x64_60b608.apk"},{"label":"斗鱼CDN-小文件","url":"https://shark2.douyucdn.cn/front-publish/live-master/lib/vendor-room_4e3a873.js"},{"label":"七牛云","url":"https://dn-mars-assets.qbox.me/qiniulog/img-slogan-white-en.png"},{"label":"鲜牛加速器(华为云CDN)","url":"https://picture.xianniu.com/pc/download/4.6.9.3/xianniusetup.4.6.9.3.exe"},{"label":"GitHub文件加速(cloudflare CDN)","url":"https://gh.con.sh/https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v2.21.12/Waifu2x-Extension-GUI-v2.21.12-Portable.7z"},{"label":"Cachefly 100MB","url":"https://cachefly.cachefly.net/100mb.test"},{"label":"cloudflare","url":"https://speed.cloudflare.com/__down?bytes=25000000"},{"label":"Vultr 1G(新加坡)","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin"},{"label":"Vultr 1G(纽约)","url":"https://nj-us-ping.vultr.com/vultr.com.1000MB.bin"},{"label":"Linode 100MB(日本省东京市)","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin"},{"label":"BBC中文网","url":"https://emp.bbci.co.uk/emp/dashjs/3.2.0-8/dash.all.min.js"}]},{"badge":"05","name":"闲云博客 · 流量消耗器","host":"lolicp.com","url":"https://lolicp.com/api/wasted_traffic_plus/","impl":"jQuery + 原生 fetch 流式读取","tags":["流式读取","多线程","运营商定向","流量上限","后台运行"],"desc":"按运营商与 App 分类的超大内置源（移动/联通/电信/腾讯/阿里/百度/咪咕等），默认 3 线程（1–64 可调），支持 GB 流量上限与后台音乐保活。","threads":"默认 3 线程（1–64 可调）","defaults":[{"label":"中国移动云盘 2.43G.zip [定向]","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip"}],"sources":[{"label":"中国移动云盘-静态资源1[定向]","url":"https://yun.mcloud.139.com/mCloudPc/v832/mCloud_Setup-001.exe"},{"label":"中国移动云盘-静态资源1[定向]","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip"},{"label":"中国移动云盘-静态资源1(中国移动)","url":"https://yun.mcloud.139.com/mCloudPc/v811/mCloud_Setup-001.exe"},{"label":"中国移动云盘-图片资源(中国移动)","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"中国移动云盘-静态资源6(中国移动)","url":"https://dc.cmicapm.com:7080/minio.byterangers.onpremise.docor.static/collect-privity-v5.1.6.js"},{"label":"移动云手机-图片资源1[定向]","url":"https://cp.139.com/_nuxt/img/member-img.c9e62ac.png"},{"label":"移动云手机-图片资源2[定向]","url":"https://cloudphoneh5.buy.139.com/cloudimage/dashboard/202108/1432606846652387328.png"},{"label":"移动云手机-图片资源3[定向]","url":"https://cloud.139.com/cloudimage/dashboard/202408/1824417436380827648.png"},{"label":"移动云手机-静态资源1[定向]","url":"https://cp.139.com/video/banner.mp4"},{"label":"移动云手机-静态资源3","url":"https://lf3-data.volccdn.com/obj/data-static/log-sdk/collect/5.0/collect-rangers-v5.1.7.js"},{"label":"微信红包-图片资源1[非定向]","url":"https://weixinredpacket.wxqcloud.qq.com/red2022/2/14/89.jpg"},{"label":"微信红包-图片资源2[定向]","url":"https://mmcomm.qpic.cn/wx_redskin/8kD42ndTK262mU9603rnaaTWiafyURYcfEnu1WAs85e3iby8WtwMKCAg/"},{"label":"微信红包-静态资源1[定向]","url":"https://finder.video.qq.com/268/20303/stodownload?encfilekey=Cvvj5Ix3eewK0tHtibORqcsqchXNh0Gf3LU4CKFYQgrxxGTryibGG1vrVQ7KQm6iaOMLz6w9ZA0D3wfMrS3Fy9NlABwmibfeWwibcWPialfiaYvFzwncHxxYnvyfibFVrQia6o0iaQ&token=x5Y29zUxcibBlhUrxSefJ9VWyNicsB4SJeDjc3XtiaThF8nzov4A9wwfOE76Jahic840782ticOwbZibw&idx=1&bizid=1023&hy=SH&m=&scene=0"},{"label":"微信-静态资源1[定向]","url":"https://res.wx.qq.com/open/js/jweixin-1.6.0.js"},{"label":"微信-静态资源1","url":"https://res.wx.qq.com/t/wx_fed/base/cover/red-envelope-cover-platform/res/js/chunk-vendors.0950cc00.js"},{"label":"微信-静态资源2","url":"https://res.wx.qq.com/wxdoc/dist/assets/media/aes-sample.eae1f364.zip"},{"label":"微信-静态资源2[定向]","url":"https://res.wx.qq.com/open/zh_CN/htmledition/res/dev/download/sdk/WeChatSDK1.7.5.zip"},{"label":"微信-静态资源3[定向]","url":"https://captcha.gtimg.com/1/tcaptcha-frame.28d99140.js"},{"label":"QQ安全中心-静态资源1","url":"https://js.aq.qq.com/js/aq_common.js"},{"label":"腾讯游戏-静态资源1","url":"https://game.gtimg.cn/images/cf/cp/a20221219jansecond/t3_prop11.gif"},{"label":"腾讯游戏-静态资源2","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561"},{"label":"腾讯游戏-静态资源3[定向]","url":"https://ossweb-img.qq.com/images/lol/web201310/skin/big10001.jpg"},{"label":"Wegame-图片资源1","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png"},{"label":"Wegame-图片资源2","url":"https://tgphpic-70080.picnjc.qpic.cn/g.2001885-r.6702b/feeds_article_ugc_1461967d-c4c8-4f01-b11d-b5fe1ca89936/0"},{"label":"Wegame-静态资源1[统计不准确]","url":"https://cdn-go.cn/vasdev/web_webpersistance_v2/latest/flog.core.min.js"},{"label":"Wegame-静态资源2[统计不准确]","url":"https://omi.cdn-go.cn/play/latest/assets/main.1840ac5c.js"},{"label":"Wegame-静态资源3[统计不准确]","url":"https://beaconcdn.qq.com/sdk/4.3.4/beacon_web.min.js"},{"label":"腾讯-静态资源[统计不准确]","url":"https://combo.b.qq.com/c/=/crm/wpa/release/3.3.8/wpa/APIs/addCustom.js,/crm/wpa/release/3.3.8/lang/extend.js,/crm/wpa/release/3.3.8/util/domain.js,/crm/wpa/release/3.3.8/wpa/WPA.js,/crm/wpa/release/3.3.8/wpa/wpaMgr.js,/crm/wpa/release/3.3.8/lang/browser.js,/crm/wpa/release/3.3.8/util/proxy.js,/crm/wpa/release/3.3.8/util/pad.js,/crm/wpa/release/3.3.8/util/Bits.js,/crm/wpa/release/3.3.8/util/getJSONP.js,/crm/wpa/release/3.3.8/util/cookie.js,/crm/wpa/release/3.3.8/util/events.js,/crm/wpa/release/3.3.8/util/onLoad.js,/crm/wpa/release/3.3.8/util/offset.js,/crm/wpa/release/3.3.8/util/Panel.js,/crm/wpa/release/3.3.8/util/onIframeLoaded.js,/crm/wpa/release/3.3.8/util/GUID.js,/crm/wpa/release/3.3.8/wpa/getQQVersion.js,/crm/wpa/release/3.3.8/wpa/ViewHelper.js,/crm/wpa/release/3.3.8/wpa/views.js?v=3.3.8.20160126"},{"label":"腾讯视频-静态资源1","url":"https://iwan-s.video.qq.com/packages/game-popover/latest/bundle.js"},{"label":"腾讯视频-静态资源2","url":"https://vm.gtimg.cn/thumbplayer/superplayer/1.35.4/superplayer.js"},{"label":"腾讯视频-静态资源3","url":"https://staticfile.qq.com/qimei/qimeisdk-web/0.6.3/index.js"},{"label":"腾讯视频-图片资源1","url":"https://community.image.video.qpic.cn/1234_1f0e95-5_1492899934_1726140843769309"},{"label":"腾讯视频-图片资源2","url":"https://image.video.qpic.cn/1234_a552e-16_630898403_1622953662941360"},{"label":"腾讯视频-图片资源3","url":"https://media-img.puui.qpic.cn/media_img/0/15204231726208958870/0"},{"label":"腾讯视频-图片资源4","url":"https://vcover-hz-pic.puui.qpic.cn/vcover_hz_pic/0/mzc00200x210zrt1725330684307/0"},{"label":"哔哩哔哩-静态资源1[定向]","url":"https://upos-sz-static.bilivideo.com/ssaxcode/m201120a222dw4bejcrhrq3gt815s4zd-1-SiteTool_1080.mp4"},{"label":"哔哩哔哩-广告1","url":"https://i0.hdslb.com/bfs/vc/7a9f7ddb6dcde16031b89a3ec7d7e806aa8eeba9.webm"},{"label":"哔哩哔哩-广告2","url":"https://i0.hdslb.com/bfs/face/03525d094e0e2a142d08181532d729615c18ec92.jpg"},{"label":"哔哩CDN域名-阿里CDN","url":"https://s1.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip"},{"label":"哔哩CDN域名-阿里CDN2","url":"https://s3.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip"},{"label":"哔哩哔哩-静态资源1[定向]","url":"https://static.hdslb.com/mobile/img/512.png"},{"label":"哔哩哔哩-图片资源1[定向]","url":"https://static.hdslb.com/images/base/icons.png"},{"label":"哔哩哔哩-图片资源2","url":"https://tf-i0.hdslb.com/bfs/archive/e9f69c2718ea0d3813f43b9d80ef9b364368f46b.jpg"},{"label":"百度网盘-静态资源1","url":"https://issuecdn.baidupcs.com/issue/netdisk/yunguanjia/BaiduYunGuanjia_6.7.4.exe"},{"label":"百度网盘-静态资源2","url":"https://wppkg.baidupcs.com/issue/netdisk/apk/BaiduNetdisk_10.1.02.apk"},{"label":"百度网盘-静态资源3","url":"https://nd-static.bdstatic.com/m-static/v20-main/home/js/chunk-vendors.f3d214b0.js"},{"label":"百度网盘-静态资源4","url":"https://staticiot.cdn.bcebos.com/union/badjs-sdk-min-2.0.0.js"},{"label":"百度网盘-静态资源5","url":"https://code.bdstatic.com/npm/spy-client@2.0.3/dist/spy-client-basic.min.js"},{"label":"百度网盘-图片资源1","url":"https://staticsns.cdn.bcebos.com/amis/2023-11/1701055508610/light-hello.png"},{"label":"百度贴吧-静态资源1","url":"https://dlswbr.baidu.com/heicha/mm/2027/acs-2027.js"},{"label":"百度贴吧-静态资源2","url":"https://efe-h2.cdn.bcebos.com/cliresource/@baidu/ubc-report-sdk/3.3.3/ubc-report-sdk.iife.polyfill.min.js"},{"label":"百度贴吧-静态资源3","url":"https://dmpstatic.cdn.bcebos.com/weirwood-sdk/1/1.3.7/bundle.min.js"},{"label":"百度贴吧-静态资源3","url":"https://tb5.bdstatic.com/api/wza/aria.js"},{"label":"百度贴吧-图片资源1","url":"https://tieba-ares.cdn.bcebos.com/mis/2022-5/1653034037345/186363ee83e9.png"},{"label":"百度贴吧-图片资源2","url":"https://imgsa.baidu.com/forum/pic/item/1e41a7014a90f603a3e0dea13412b31bb251edcc.jpg"},{"label":"百度视频-静态资源1","url":"https://jmy-video.baidu.com/7b828dab3003f3841f3a026b437cf879_1280_720.mp4"},{"label":"百度视频-静态资源2","url":"https://hk.bdstatic.com/_next/static/chunks/1232.ab8e3fcb5239645f.js"},{"label":"百度视频-图片资源1","url":"https://avatar.bdstatic.com/it/u=3525109608,2713994146&fm=3012"},{"label":"百度视频-图片资源2","url":"https://pic.rmb.bdstatic.com/baidu-rmb-video-cover-1/2024-1/1705996556941/724684ad74c9.png"},{"label":"百度页游-静态资源1","url":"https://fenwan.cdn.bcebos.com/webgame/static/webgame/js/index.aea21658.js"},{"label":"百度文库-静态资源1","url":"https://edu-wenku.bdimg.com/v1/na/0807/PC%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%89%88%E6%9C%AC%E5%8C%85/%E7%99%BE%E5%BA%A6%E6%96%87%E5%BA%93%20Setup%201.2.7.exe"},{"label":"百度文库-静态资源2","url":"https://wkstatic.bdimg.com/static/ndpcwenku/static/pcCoreClient/js/views/1b65f79a0217ad721cce.js"},{"label":"百度输入法","url":"https://imeres.baidu.com/imeres/ime-res/guanwang/img/Ubuntu_Deepin-fcitx-baidupinyin-64.zip"},{"label":"爱奇艺-静态资源1","url":"https://stc.iqiyipic.com/gaze/fingerprint/1.0.58/fingerprint.umd.min.js"},{"label":"爱奇艺-静态资源2","url":"https://static.iqiyi.com/js/player_v3/pcweb.wonder.12.92.online.js"},{"label":"爱奇艺-静态资源3","url":"https://static-s.iqiyi.com/qysdk/payment/static/js/main.js"},{"label":"爱奇艺-静态资源4","url":"https://www.iqiyi.com/static/2024913091751/css/main.css"},{"label":"爱奇艺-静态资源5","url":"https://security.iqiyi.com/static/cook/v1/cooksdk.js"},{"label":"爱奇艺-图片资源1","url":"https://pic9.iqiyipic.com/image/20240912/01/ec/v_176977887_m_601_m7_440_608.webp"},{"label":"爱奇艺-图片资源2","url":"https://pic0.iqiyipic.com/marketing/20200116/911b3739e5654f8c9e89e3a8fd51d74c.jpg"},{"label":"爱奇艺-图片资源3","url":"https://img7.iqiyipic.com/passport/20180804/fe/12/passport_2352240096_153335810673051_1080_1080.jpg"},{"label":"爱奇艺-图片资源4","url":"https://www.iqiyipic.com/common/fix/headicons/female04-130.png"},{"label":"爱奇艺-图片资源5","url":"https://static.g.iqiyi.com/qiplay2/e1339c7c-1cfc-458a-b165-62ec14e59f19.png"},{"label":"阿里云-图片资源1","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png"},{"label":"阿里云-图片资源2","url":"https://gw.alicdn.com/tfscom/TB1fASCxhjaK1RjSZKzXXXVwXXa.jpg"},{"label":"阿里云-静态资源1","url":"https://g.alicdn.com/AWSC/fireyejs/1.228.23/fireyejs.js"},{"label":"淘宝-静态资源2","url":"https://o.alicdn.com/tbhome/tbnav/index.js"},{"label":"淘宝-静态资源3","url":"https://at.alicdn.com/t/a/font_403341_6q1chd11nes.woff2"},{"label":"支付宝-静态资源1","url":"https://mdn.alipayobjects.com/ind_developertool/afts/file/A*fSAmSbgxLosAAAAAAAAAAAAADlx-AQ?af_fileName=AlipayKeyTool-2.0.3.dmg"},{"label":"支付宝-静态资源2","url":"https://gw.alipayobjects.com/render/p/yuyan/180020010001210191/umi.9f3e4149.js"},{"label":"支付宝-静态资源3","url":"https://ur.alipay.com/tracert_a1911.js"},{"label":"联通官网-图片资源1(中国联通)","url":"https://m1.ad.10010.com/small_video/uploadImg/1669798519261.png"},{"label":"联通官网-图片资源2(中国联通)","url":"https://www.10010.com/wt_service_web/copyright/images/jifenshangcheng.png"},{"label":"联通官网-图片资源3(中国联通)","url":"https://iservice.10010.com/wt_manage/uploadImg/1730297793913.png"},{"label":"联通官网-静态资源1(中国联通)","url":"https://www.10010.com/wt_service_web/js/header.js"},{"label":"联通云-静态资源2(中国联通)","url":"https://www.cucloud.cn/templets/1/default/common/fontStyle/SourceHanSansCN-Light.otf"},{"label":"电信官网-静态资源1(中国电信)","url":"https://bigdata-behaviordata.189.cn:9002/chinatelecom/chinatelecom.min.js"},{"label":"电信官网-静态资源2(中国电信)","url":"https://livepull.189.cn/live/youhui-1728184851.ts"},{"label":"天翼云(中国电信)","url":"https://vod-origin-rjzy.gdoss.xstore.ctyun.cn/f9ea5388dc0447aa88a5b92f07f1a8f7.mp4"},{"label":"天翼云会议-静态资源1(中国电信)","url":"https://cloudmeeting.189.cn/static/js/chunk-vendors.624b9116.js"},{"label":"天翼云盘-静态资源1(中国电信)","url":"https://static.e.189.cn/open/login/page/web/v5.0/static/js/captch.min.js?v1.1"},{"label":"天翼云盘-图片资源1(中国电信)","url":"https://api.cloud.189.cn/guns/img/recommendedPosition/20240710094316_0710web.jpg"},{"label":"优酷-图片资源1","url":"https://m.ykimg.com/0584000066BEC16C13EB661302C6D644"},{"label":"优酷-图片资源2","url":"https://liangcang-material.alicdn.com/prod/upload/b4cef471dbfb452fbff8a61102a8ca9a.webp.gif"},{"label":"优酷-图片资源3","url":"https://static.youku.com/user/avatar/1350/23.png"},{"label":"华为官网-图片资源1","url":"https://consumer.huawei.com/content/dam/huawei-cbg-site/cn/mkt/huawei-cloud-service/appgallery/application-boutique-pc1.jpg"},{"label":"华为云-静态资源1","url":"https://res.hc-cdn.com/cnpm-baseui/2.8.11/fonts/HuaweiSans-Bold.ttf"},{"label":"华为云-图片资源1","url":"https://res-static.hc-cdn.cn/cloudbu-site/china/zh-cn/HWCdeveloper/shemei/bilibili-qc.jpg"},{"label":"华为云-静态资源2","url":"https://portal.hc-cdn.com/cnpm-baseui/2.8.11/index.css"},{"label":"小米应用商店","url":"https://cnbj0.fds.api.xiaomi.com/miio.files/commonfile_zip_a348bd8c21030ba605d47331d4eb4663.zip"},{"label":"小米开放平台-静态资源1","url":"https://dev.mi.com/console/css/main.css"},{"label":"小米开放平台-静态资源2","url":"https://cdn.cnbj1.fds.api.mi-img.com/appstore-developer-web-fe/production/static/js/14.45dbc296.chunk.js"},{"label":"小米开放平台-静态资源3","url":"https://cdn.web-global.fds.api.mi-img.com/mcfe--mi-account/static/static/media/banner.92c693b4..jpg"},{"label":"小米开放平台-静态资源4","url":"https://mcfe--account-static-legacy.cnbj1.mi-fds.com/mcfe--account-static-legacy/static/prod/captcha-static/v2/js/v.js"},{"label":"小米开放平台-静态资源5","url":"https://static-verify.sec.xiaomi.com/v2/js/v.js"},{"label":"京东商城-静态资源1","url":"https://wq.360buyimg.com/jdm-home-page/pages/js/index.aeba0df4.js"},{"label":"京东商城-静态资源2","url":"https://storage.360buyimg.com/babelnode/jd-jssdk/4.2.1/jd-jssdk.js"},{"label":"京东商城-静态资源3","url":"https://wl.jd.com/unify.min.js"},{"label":"京东商城-静态资源4","url":"https://storage.jd.com/jdmobile/JDMALL-PC2.apk"},{"label":"京东商城-图片资源1","url":"https://m.360buyimg.com/seckillcms/jfs/t1/155683/19/46720/143938/66de6069Fcbca5419/a04efd5dd680737d.png"},{"label":"京东商城-图片资源2","url":"https://img10.360buyimg.com/live/jfs/t1/128947/12/26918/1361527/6260e71bE0ee85af5/ecaa17ea8dd3dddb.jpg"},{"label":"拼多多-静态资源1","url":"https://static.pddpic.com/assets/js/react_pdd_50c6d8bdb252d256ae20_1026.js"},{"label":"拼多多-静态资源2","url":"https://mcdn.pinduoduo.com/home/js/index.494d9edf.js"},{"label":"拼多多-静态资源3","url":"https://lpcdn.pinduoduo.com/_next/static/chunks/74769-4e08eb3c27153a5f.js"},{"label":"拼多多-静态资源4","url":"https://dl.pddpic.com/android_dev/2021-02-08/4ff25ce6148aa99aeeba723b5891ae72.apk"},{"label":"拼多多-静态资源5","url":"https://cd.pddpic.com/android_dev/2023-07-28/5c04772968aee57ca690fbe1e7f29467.apk"},{"label":"拼多多-图片资源1","url":"https://funimg.pddpic.com/common/recruit/43c56034-ce04-49fc-9227-0d24a8e82849.png"},{"label":"拼多多-图片资源1","url":"https://funimg.pddpic.com/c3affbeb-9b31-4546-b2df-95b62de81639.png.slim.png"},{"label":"拼多多-图片资源2","url":"https://img.pddpic.com/gaudit-image/2024-06-01/3c2541af53af076d0b78c67fd51db13d.jpeg"},{"label":"拼多多-图片资源3","url":"https://cdn.pinduoduo.com/upload/official_website/6b1f700d-70c7-4f9f-890c-eb9f9ae68425.png"},{"label":"拼多多-图片资源4","url":"https://commimg.pddpic.com/add-crystal-outer/2023-04-11/70a3dea1-53d4-4da6-9397-d4bf2a884911.gif.slim.gif"},{"label":"拼多多-图片资源5","url":"https://t00img.yangkeduo.com/chat/images/2022-12-12/79e0a4684de85c7b59f797819260be98.jpeg"},{"label":"逆水寒官网静态资源","url":"https://n.v.netease.com/2018/1017/ba32725ee3a20ee1fbe874a45d1f7fa9qt.mp4"},{"label":"逆水寒客户端","url":"https://nsh.gdl.netease.com/NGP/NGP_NSH_2.0.81143.exe"},{"label":"网易云游戏","url":"https://nsh.gdl.netease.com/cloudgame_macos/NSH_cloud_game_for_mac_1.4.6_2023_06-02-11.dmg"},{"label":"MCLauncher工具(阿里CDN)","url":"https://x19.gdl.netease.com/MCLauncherTool_0.1.4.50447.exe"},{"label":"网易公开课(白云山CDN)","url":"https://mov.bn.netease.com/movieMP4/2011/3/U/1/S6V22L0U1.mp4"},{"label":"咪咕音乐-静态资源1","url":"https://wsdkdl.migu.cn/common/mgmusic/migu_https.js"},{"label":"咪咕音乐-静态资源2[统计不准确]","url":"https://webpay.migu.cn:8443/migunetsdk/webJs/frame.html?netId=b486900f41fc411187240dcb45fdbc8d&client=WWW&umark=Common2&protocol=https&mv=3.0.1&t=1704113156924"},{"label":"咪咕视频-图片资源1","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg"},{"label":"咪咕视频-图片资源2","url":"https://wapx.cmvideo.cn/publish/poms/image/1752/094/251/202311151425_477841_HSJ1080H.jpg"},{"label":"咪咕快游-图片资源1(中国移动)[非定向]","url":"https://wcache.migu.cn/prod/upload/game_resource/contentRelated/006212638000/84/1662605671282.jpg"},{"label":"咪咕快游-图片资源2(中国移动)[非定向]","url":"https://static.migucloud.com/article/462/20191213/4f23d49723e5a46938718a3f4587734f.png"},{"label":"咪咕快游-图片资源3(中国移动)[非定向]","url":"https://scache.cmam.migu.cn/nuwa/culture/202309/20230905/model/m9100013009198/f1164326392847015936.png?timestamp=2332214977783&sid=2445210582&encrypt=936ee89150a3158eb577614473f425e5"},{"label":"咪咕快游-图片资源2(中国移动)","url":"https://freeserver.migufun.com/resource/beta/picture/system/20200806/20200806155030914.jpg"},{"label":"咪咕快游-图片资源4(中国移动)[非定向]","url":"https://freeserver.migufun.com/resource/beta/picture/system/20211003/20211003124601120_28.jpg"},{"label":"咪咕快游-图片资源5(中国移动)","url":"https://gcache.migu.cn/prod/upload/game_resource/channel_for_homepage_game2/202408/2909/59/20240829095855985_mgwebp1.jpg"},{"label":"咪咕快游-静态资源1(中国移动)[非定向]","url":"https://h5cdn.migufun.com/middleh5/_nuxt/9d04212.js"},{"label":"咪咕善跑-图片资源1(中国移动)","url":"https://sportfile.migufun.com/Upload/dz/2019/0907/2405d7377e56a92f@1080x540.jpg"},{"label":"中国移动商城-图片资源1","url":"https://img1.shop.10086.cn/goods/ts27zarfe8d5jgvs_940x7200"},{"label":"中国移动业务-图片资源2","url":"https://res.app.coc.10086.cn/group1/M00/03/0D/CtFOBmTxRyaAYjdGAAAhPGgdCJw206.png"},{"label":"移动云-静态资源1","url":"https://obs-wx-ysj-xnl-pro-001.obs.cidc-rp-12.joint.cmecloud.cn:443/public/upgrade/apk/baidu02/cloudphone-heyingyun-baidu02-v2.1.0-20240701_1446-release_20240701150412_sec_sign.apk"},{"label":"移动云-静态资源2","url":"https://ecloud.eos-guangzhou-1.cmecloud.cn/op-login-static/3.6.0/js/vendor.6a12e122d36e1092fd0e.js"},{"label":"移动云手机-静态资源3","url":"https://api.cp.139.com/cgate/cme/v1/appUpgrade/version?channel=baidu01"},{"label":"知乎-图片资源","url":"https://picx.zhimg.com/v2-af7215f2d8266fec068e049b7559cd19.gif"},{"label":"知乎-静态资源","url":"https://static.zhihu.com/parker/campaign/vendors.5b2b99d85429920d2342.js"},{"label":"OPPP商城静态资源","url":"https://dsfs.oppo.com/oppo/shop-pc-v2/main/js/9fb472f.js"},{"label":"VIVO官网静态资源","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4"},{"label":"VIVO应用商店","url":"https://imgwsdl.vivo.com.cn/appstore/developer/soft/20210125/202101251051528awqa.apk"},{"label":"字节跳动前端公共库","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png"},{"label":"字节跳动-抖音","url":"https://www.douyin.com/download/pc/obj/douyin-pc-client/7044145585217083655/releases/10715336/2.6.0/win32-ia32/douyin-v2.6.0-win32-ia32-douyinDownload1.exe"},{"label":"上海灵羊1","url":"https://activity.hdslb.com/blackboard/static/20210604/4d40bc4f98f94fbc71c235832ce3efd4/hJEhL6jGOY.zip"},{"label":"上海灵羊2","url":"https://i0.hdslb.com/bfs/sycp/creative_img/202204/757e134224a7b49d01737d72e87b3cd3.jpg"},{"label":"搜狐视频","url":"https://photocdn.tv.sohu.com/img/20230419/pic_org_88f470db-176e-40c5-a514-a31993dabb27.jpg"},{"label":"搜狐门户静态","url":"https://statics.itc.cn/web/v3/static/js/main-c200c3eba1.jsg"},{"label":"搜狐图片","url":"https://p8.itc.cn/c_fit,w_1800,h_1200,q_100/images01/20230723/e23a27186e404472ab1f659a1ae18cae.jpeg"},{"label":"CCTV","url":"https://dh5.cntv.myhwcdn.cn/asp/h5e/hls/1200/0303000a/3/default/ec48b9f8c76e49af842d4942914ad663/1.ts"},{"label":"新浪","url":"https://i.apps.sina.cn/tqt/zip/com.sina.tianqitong_6.1892_2019.07.29.17.54.18.apk"},{"label":"AcFun","url":"https://cdn.aixifan.com/downloads/AcFun-acfunh5-release-6.62.0.1238_x64_60b608.apk"},{"label":"斗鱼CDN","url":"https://sta-op.douyucdn.cn/dyadmin-ext/pkg/pc/DY_OBS_Studio_Ext/20221208103446325/DYOBSStudioExtension_1.0.2.3.exe"},{"label":"斗鱼CDN-小文件","url":"https://shark2.douyucdn.cn/front-publish/live-master/lib/vendor-room_4e3a873.js"},{"label":"七牛云","url":"https://devtools.qiniu.com/linux/amd64/qrsctl"},{"label":"鲜牛加速器(华为云CDN)","url":"https://picture.xianniu.com/pc/download/4.7.3.5/xianniusetup.4.7.3.5.exe"},{"label":"清华大学 [稳定]","url":"https://iptv.tsinghua.edu.cn/st/garbage.php?ckSize=10240"},{"label":"Quark_Browser(uc)","url":"https://image.uc.cn/s/uae/g/2i/uninstallpg/Quark%20Browser.apk"},{"label":"鹿角网络-图片资源","url":"https://web-ipv6.hycdn.cn/hypergryph/official/assets/img/arknights.8658b6.jpg"},{"label":"Linode 100MB(日本省东京市)","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin"},{"label":"香港快运","url":"https://static.hkexpress.com/media/1077/crew-recruitment-banner-upload-sc.png"},{"label":"Cachefly Test [Global]","url":"https://cachefly.cachefly.net/200mb.test"},{"label":"Vultr 1G(新加坡)","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin"},{"label":"Vultr 1G(纽约)","url":"https://nj-us-ping.vultr.com/vultr.com.1000MB.bin"},{"label":"Vultr 1G(日本)","url":"https://hnd-jp-ping.vultr.com/vultr.com.100MB.bin"},{"label":"Vultr 1G(德国)","url":"https://fra-de-ping.vultr.com/vultr.com.100MB.bin"},{"label":"Vultr 1G(美国洛杉矶)","url":"https://lax-ca-us-ping.vultr.com/vultr.com.100MB.bin"},{"label":"Vultr 1G(美国2)","url":"https://nj-us-ping.vultr.com/vultr.com.100MB.bin"},{"label":"Github-静态资源1","url":"https://github.githubassets.com/assets/optimizely-f41bb566674d.js"},{"label":"Github-静态资源2","url":"https://github.githubassets.com/assets/cat-7c075cc3dda1.glb"},{"label":"Github-图片资源1","url":"https://github.githubassets.com/images/mona-whisper.gif"},{"label":"Github-图片资源2","url":"https://github.githubassets.com/assets/head_sss-adeeeaf1228e.jpg"},{"label":"X-静态资源1","url":"https://abs.twimg.com/responsive-web/client-web/main.ef558a8a.js"},{"label":"X-图片资源1","url":"https://pbs.twimg.com/amplify_video_thumb/1915351264088502272/img/WtcCdzQWaZ-bbW2h.jpg"},{"label":"X-图片资源2","url":"https://abs-0.twimg.com/emoji/v2/svg/1f914.svg"},{"label":"apple-静态资源1","url":"https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"},{"label":"apple-静态资源2","url":"https://js-cdn.music.apple.com/musickit/v2/amp/musickit.js"},{"label":"apple-静态资源3","url":"https://js-cdn.music.apple.com/hls.js/2.610.3/hls.js/hls.js"},{"label":"apple-静态资源4","url":"https://apptrailers.itunes.apple.com/itunes-assets/PurpleVideo221/v4/e5/b8/e1/e5b8e119-58bf-0a47-45d3-28519a8bfdf4/P850599853_Anull_video_gr290_sdr_886x1920-.mp4"},{"label":"apple-图片资源1","url":"https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/60/60/23/606023fb-33d6-79e8-bcfe-7793257abd65/3_iOS_6.7.jpg/230x0w.webp"},{"label":"Google-图片资源1","url":"https://i.ytimg.com/vi/j7WID3q1yY0/maxresdefault.jpg"},{"label":"Google-图片资源2","url":"https://yt3.ggpht.com/PKRBxhCiGa8Y0vPmHa1E2cdjpLhUq2Pl-gESwP7kk2plGgxLdsbjyTd9VjcJwBMiY0HQ8bvx5Q=s176-c-k-c0x00ffffff-no-rj"},{"label":"Google-图片资源2","url":"https://play-lh.googleusercontent.com/B5AENJqFOd91t5cWZLTQbVUm7iDWzYVM1n0Pe2RI_46dhlWMtVAUBioUvy4YMXWdwA=w240-h480-rw"},{"label":"Google-静态资源1","url":"https://fonts.gstatic.com/s/roboto/v47/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2"},{"label":"Google-静态资源2","url":"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=YouTube+Sans:wght@300..900&display=swap"},{"label":"Google-静态资源3","url":"https://apis.google.com/_/scs/abc-static/_/js/k=gapi.gapi.en.BY48SQoc80o.O/m=gapi_iframes,googleapis_client/rt=j/sv=1/d=1/ed=1/rs=AHpOoo-GDP1D38zSeS8hy4T0Ij3IgC1Nkw/cb=gapi.loaded_0"},{"label":"Google-静态资源4","url":"https://ci3.googleusercontent.com/meips/ADKq_NZqxuLeMfNcPO4Ay_a-Dou4qiiMiv4gAfViS_OKenL5VotOnzCnWQkyFbrxhhtaxPWXL82OOFfhvmdKndVr0RtgT5m-b1GuO_sG-YmnmMdYllQ3I0OO81hy7pQt=s0-d-e1-ft"},{"label":"Google-静态资源5","url":"https://ajax.googleapis.com/ajax/libs/angular_material/1.1.9/angular-material.min.js"},{"label":"Cloudflare Speed [Global]","url":"https://speed.cloudflare.com/__down?bytes=25000000"},{"label":"Cloudflare-静态资源1","url":"https://challenges.cloudflare.com/turnstile/v0/g/ec4b873d446c/api.js"},{"label":"书旗小说-视频广告01","url":"https://v4-lm.adukwai.com/bs2/photo-video-mz/5190117271491827886_31e5de0351720277_4636_sl200hd15.mp4?ss=vpm"},{"label":"书旗小说-视频广告02","url":"https://v4-lm.adukwai.com/bs2/adUnionVideo/9d088f4676a54e0b832dfc64facac497.mp4"},{"label":"书旗小说-图片广告01","url":"https://p2-lm.adukwai.com/udata/pkg/aW1hZ2UtcGtnOmFkX2RzcF9pbWFnZV91cGxvYWQ6Mzc4NDA0NTU0NzpNRVJDSEFOVDpbQkA2NjE0ZWI3MDoxMDY2MjcyNzk1MzU0Nw==.jpg"},{"label":"书旗小说-图片广告02","url":"https://sf3-fe-tos.pglstatp-toutiao.com/obj/ad-pattern/static/images/1700635544820_splashbackfor5.jpg"},{"label":"书旗小说-图片广告03","url":"https://img.meituan.net/content/f56fe3456d25d951cdd32efa56d608a290831.jpg"},{"label":"书旗小说-图片广告04","url":"https://p0.meituan.net/content/367fc11bb0ef629cb72988bfc5c9a930267166.jpg"},{"label":"书旗小说-图片广告05","url":"https://p1.meituan.net/linglong/2a7ff2c8b1928507c721c577762b8321285561.jpg"},{"label":"书旗小说-图片广告06","url":"https://sf3-fe-tos.pglstatp-toutiao.com/obj/ad-pattern/static/images/1701689556172_swipe-up.gif"},{"label":"书旗小说-图片广告07","url":"https://s3plus.meituan.net/v1/mss_5017c592a8a946d2a54eb62a76ba299c/nebulafile/e73d23a1d2929534c167ad61c75b8aae"},{"label":"书旗小说-图片广告08","url":"https://pgdt.ugdtimg.com/141/20204/snscosdownload/SZ/reserved/689059e200078a5908be7c8d71f701150000008d00004eec"},{"label":"书旗小说-图片广告09","url":"https://cdn.1rtb.com/s1000/jd.jpg"},{"label":"书旗小说-图片广告10","url":"https://p2-lm.adukwai.com/udata/pkg/aW1hZ2UtcGtnOmFkX2RzcF9pbWFnZV91cGxvYWQ6Mzc4NDA0NTU0NzpNRVJDSEFOVDpbQkA0OWQ1OTQ3Mjo0ODkyOTI5MzA3NTQ3.jpg"}]},{"badge":"06","name":"流量实验室 · 网络性能","host":"hhy.im","url":"https://hhy.im/","impl":"原生 JS · fetch + getReader 流式读取","tags":["流式读取","多线程","目标流量","图表"],"desc":"16 线程（1–64 可调）轮询多地址，URL 追加时间戳破缓存；支持目标流量到量自动停止、Mbps/MB/s 切换与 Canvas 实时速度图。","threads":"默认 16 线程（1–64 可调）","defaults":[{"label":"中国移动云盘 2.43G.zip（默认 7 地址轮询）","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip"}],"sources":[{"label":"中国移动云盘 2.43G.zip","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip"},{"label":"中国移动云盘安装包","url":"https://yun.mcloud.139.com/mCloudPc/v832/mCloud_Setup-001.exe"},{"label":"天翼云桌面","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe"},{"label":"咪咕爱看","url":"https://img.aikan.miguvideo.com/publish/noms/2024/04/22/1O5MNLF3AN2JL.gif"},{"label":"和彩云图片","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"咪咕快游图片","url":"https://gcache.migu.cn/prod/upload/game_resource/channel_for_homepage_game2/202408/2909/59/20240829095855985_mgwebp1.jpg"},{"label":"咪咕音乐 JS","url":"https://wsdkdl.migu.cn/common/mgmusic/migu_https.js"}]},{"badge":"07","name":"流量消失器","host":"shua.leyz.top","url":"https://shua.leyz.top/","impl":"Vue2 + axios · onDownloadProgress 统计进度","tags":["axios 进度","多线程","运营商定向"],"desc":"6 线程循环请求，axios 下载进度事件累计字节并计算瞬时速度；按运营商/App 分类的测试源，随机参数破缓存，支持无限循环。","threads":"默认 6 线程","defaults":[{"label":"朝夕光年游戏 mp4","url":"https://lf5-j1gamecdn-cn.dailygn.com/obj/lf-game-lf/gdl_app_2682/1233880772355.mp4"}],"sources":[{"label":"朝夕光年游戏(点击此处可更换测速源)","url":"https://lf5-j1gamecdn-cn.dailygn.com/obj/lf-game-lf/gdl_app_2682/1233880772355.mp4"},{"label":"腾讯①","url":"https://ossweb-img.qq.com/images/lol/web201310/skin/big10001.jpg"},{"label":"腾讯②","url":"https://ossweb-img.qq.com/upload/webplat/info/cf/20230717/653421385804853.png"},{"label":"腾讯③","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561"},{"label":"腾讯③-下载速度不正确","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif"},{"label":"腾讯视频","url":"https://puui.qpic.cn/vpic_cover/g3346tki83w/g3346tki83w_hz.jpg"},{"label":"WeGame","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png"},{"label":"百度①","url":"https://imeres.baidu.com/imeres/ime-res/guanwang/img/Ubuntu_Deepin-fcitx-baidupinyin-64.zip"},{"label":"百度网盘①","url":"https://staticsns.cdn.bcebos.com/amis/2024-12/1733110167508/ec2943f8f5e27bd38f00c6e02.png"},{"label":"百度网盘②","url":"https://issuepcdn.baidupcs.com/issue/netdisk/yunguanjia/BaiduNetdisk_7.54.0.103.exe"},{"label":"百度网盘③","url":"https://nd-static.bdstatic.com/m-static/wp-brand/img/banner.5783471b.png"},{"label":"爱奇艺","url":"https://static-d.iqiyi.com/ext/common/iQIYIMedia_000.dmg"},{"label":"好看视频","url":"https://vd3.bdstatic.com/mda-pm9zn07ydwzhfw85/1080p/cae_h264/1702252000350219836/mda-pm9zn07ydwzhfw85.mp4"},{"label":"联通电视①(和②轮流使用)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20250116/25011618011879812384860807169.mp4?user=N/A&channelid=3000013947&contentid=91789000202501164552800&id=E92AAB52BB3EB9E86A77E4FE54F90ADC&timestamp=1737618506&isSegment=0"},{"label":"联通电视②(和①轮流使用)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20250116/25011618011879812383451521025.mp4?user=N/A&channelid=3000013947&contentid=91789000202501164552580&id=64DAD3ACBE0356AD6035212D7FAF8B9A&timestamp=1737618535&isSegment=0"},{"label":"联通电视③(轮流使用)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20250116/25011612551879742395369840642.mp4?user=N/A&channelid=3000013947&contentid=91789000202501164520690&id=5CFB65B4EE0853F46353497CFA2B1BA1&timestamp=1737618838&isSegment=0"},{"label":"联通云","url":"https://www.cucloud.cn/upload/1717685645631.png"},{"label":"联通公免①(手机电视)","url":"https://m1.ad.10010.com/small_video/uploadImg/1598021193891.jpg"},{"label":"联通云智手机","url":"https://s3-sh-uphone.wostore.cn/ivr-dev-1/uphone/static/images/wallpaper/HomePage/JGQ001/H5/NoLogin/2-20251029105302322.jpg"},{"label":"联通公免②(手机电视)","url":"https://m1.ad.10010.com/small_video/uploadImg/1669798519261.png"},{"label":"沃音乐①(联通公免)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volteposter/screenshot/20220129/1487368366712385537.jpeg"},{"label":"沃音乐②(联通公免)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volteposter/screenshot/20200805/1290977212593999873.jpeg"},{"label":"阿里②(钉钉定向)","url":"https://gw.alipayobjects.com/os/volans-demo/f44c302e-b704-4a70-bcc6-0214e37ca256/MiniProgramStudio-1.17.4.exe"},{"label":"阿里系①","url":"https://gw.alicdn.com/tfscom/TB1fASCxhjaK1RjSZKzXXXVwXXa.jpg"},{"label":"阿里系②","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png"},{"label":"钉钉","url":"https://gw.alicdn.com/tfs/TB1k07QUoY1gK0jSZFCXXcwqXXa-810-450.png"},{"label":"夸克网盘","url":"https://cloud.video.taobao.com/play/u/null/p/1/e/6/t/1/442087612070.mp4"},{"label":"优酷视频","url":"https://jmy-pic.baidu.com/0/pic/1203225490_216151106_2084668354.jpg"},{"label":"今日头条","url":"https://lf9-static.bytednsdoc.com/obj/eden-cn/uhbfnupkbps/video/earth_v6.mp4"},{"label":"字节跳动①","url":"https://lf1-cdn-tos.bytescm.com/obj/static/ies/bytedance_official/_next/static/images/8-4@2x-f85835b5e482bccf94c824067caac899.png"},{"label":"字节跳动②","url":"https://lf3-cdn-tos.bytescm.com/obj/ttfe/ATSX/mainland/video-poster_1576231362701.png"},{"label":"天翼云盘","url":"https://static.e.189.cn/open/login/page/web/v5.0/static/js/captch.min.js?v1.1"},{"label":"天翼云桌面①","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe"},{"label":"天翼云桌面②","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202010003/CtyunClouddeskUniversal_2.1.0_202010003_x86_20230905151733_Setup_signed.exe"},{"label":"天翼云","url":"https://vod-origin-rjzy.gdoss.xstore.ctyun.cn/8ee30576c30d40518c4dae03f7eacf3c.mp4"},{"label":"量子密信","url":"https://imback.zdxlz.com/im2/download/%E9%87%8F%E5%AD%90%E5%AF%86%E4%BF%A1.apk"},{"label":"移动云盘①(原和彩云)","url":"https://download.mcloud.139.com/storageWeb/servlet/downloadServlet?code=SzgxODExZDZ2Q2sxOUUxOTYxN3JrVnNJQTJW&un=6546C54A4774C2E136C50775377C19D31D88D6B7A3149689E3A332B826A36331&dom=D960&rate=0&txType=0"},{"label":"移动云盘①","url":"https://img.mcloud.139.com/material_prod/material_media/20230605/1685935277971.jpg"},{"label":"移动云盘②","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"移动云盘①","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip"},{"label":"移动云盘②","url":"https://open.yun.139.com/static/img/case_bg_1.16716f8f.png"},{"label":"咪咕视频①","url":"https://img.cmvideo.cn/publish/noms/2023/12/06/1O4SHFIFR36BD.gif"},{"label":"咪咕视频②","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg"},{"label":"咪咕爱看","url":"https://img.aikan.miguvideo.com/publish/noms/2024/04/22/1O5MNLF3AN2JL.gif"},{"label":"咪咕快游①","url":"https://freeserver.migufun.com/resource/beta/picture/system/20200723/20200723104326220_sdpic.png"},{"label":"咪咕快游②","url":"https://freeserver.migufun.com/resource/beta/video/system/20210924112351666.mp4"},{"label":"移动","url":"https://img1.shop.10086.cn/goods/tcqtjwurkdsfcxgr_940x7200"},{"label":"快手","url":"https://alimov2.a.kwimgs.com/upic/2024/11/18/17/BMjAyNDExMTgxNzM0NTFfMjQ2MzY1ODI4MV8xNDg5NTc1NTQwNDBfMl8z_b_Ba0e085802ad867415b13e560bab69dd2.mp4"},{"label":"京东","url":"https://img20.360buyimg.com/babel/jfs/t20271006/227634/23/27810/35856/67027beeF0cffb9fc/e68cd03835b91103.png"},{"label":"微软Azure","url":"https://cdn.microsoftstore.com.cn/media/product_long_description/3781-00000/2_dupn50xr/4h0yzz2_360.jpg"},{"label":"vivo","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4"},{"label":"网易(阿里CDN)","url":"https://x19.gdl.netease.com/MCLauncher_publish_1.8.0.35383.exe"},{"label":"网易公开课(白云山CDN)","url":"https://mov.bn.netease.com/open-movie/nos/mp4/2015/11/26/SB8ECV1ST_sd.mp4"},{"label":"网易云游戏","url":"https://a29.gdl.netease.com/CloudGame_setup_pc_x64_1.5.1.0039.exe"},{"label":"B站","url":"https://upos-sz-staticks3.bilivideo.com/ssaxcode/m201120a222dw4bejcrhrq3gt815s4zd-1-SiteTool_1080.mp4"},{"label":"B站①(阿里CDN)","url":"https://s1.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip"},{"label":"B站②(阿里CDN)","url":"https://s3.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip"},{"label":"小红书","url":"https://714-3.vod.tv.itc.cn/sohu/ifox/Lzk5LzI1Mi8iOJyyPTwssSSquySopbGYrBm6qDQjlzI2s5MyHpU/SHPlayer_3.28_18312.dmg"},{"label":"完美世界","url":"https://gamesvmg.wmupd.com/webops/10102.mp4"},{"label":"喜马拉雅","url":"https://s1.xmcdn.com/yx/xmly-live-release/last/dist/Ximalaya-Live-Setup-4.18.550.exe"},{"label":"CCTV","url":"https://dh5.cntv.myhwcdn.cn/asp/h5e/hls/1200/0303000a/3/default/ec48b9f8c76e49af842d4942914ad663/1.ts"},{"label":"锤子(手机)","url":"https://static.smartisanos.cn/common/video/production/ocean/os-1-1710.mp4"},{"label":"新浪","url":"http://i.apps.sina.cn/tqt/zip/com.sina.tianqitong_6.1892_2019.07.29.17.54.18.apk"},{"label":"AcFun","url":"https://cdn.aixifan.com/downloads/AcFun-acfunh5-release-6.62.0.1238_x64_60b608.apk"},{"label":"拼多多①","url":"https://dl.pddpic.com/android_dev/2021-02-08/4ff25ce6148aa99aeeba723b5891ae72.apk"},{"label":"拼多多②","url":"https://cd.pddpic.com/android_dev/2023-07-28/5c04772968aee57ca690fbe1e7f29467.apk"},{"label":"拼多多H5(js文件)","url":"https://static.pddpic.com/assets/js/react_pdd_50c6d8bdb252d256ae20_1026.js"},{"label":"拼多多H5(图像文件)","url":"https://funimg.pddpic.com/c3affbeb-9b31-4546-b2df-95b62de81639.png.slim.png"},{"label":"拼多多img(CDN)","url":"https://t00img.yangkeduo.com/chat/images/2022-12-12/79e0a4684de85c7b59f797819260be98.jpeg"},{"label":"斗鱼","url":"https://shark2.douyucdn.cn/front-publish/live-master/lib/vendor-room_4e3a873.js"},{"label":"Quark_Browser","url":"http://image.uc.cn/s/uae/g/2i/uninstallpg/Quark_Browser_unins.apk"},{"label":"七牛云","url":"https://kodo-toolbox.qiniu.com/kodo-browser-Linux-x64-v1.0.17.zip"},{"label":"鲜牛加速器(华为云CDN)","url":"https://picture.xianniu.com/pc/download/3.8.0.4/xianniusetup.3.8.0.4.exe"},{"label":"上海灵羊","url":"https://activity.hdslb.com/blackboard/static/20210604/4d40bc4f98f94fbc71c235832ce3efd4/hJEhL6jGOY.zip"},{"label":"Cloudflare①(海外)","url":"https://speed.cloudflare.com/__down?bytes=104857600"},{"label":"Cloudflare②(海外)","url":"https://speed.cloudflare.com/__down?bytes=524288000"},{"label":"Cloudflare③(海外)","url":"https://speed.cloudflare.com/__down?bytes=25000000"},{"label":"Cloudflare④(海外)","url":"https://speed.cloudflare.com/__down?bytes=1073741824"},{"label":"Cloudflare①(CDN)","url":"https://t1.geigei.gq"},{"label":"Cachefly 100MB(Trusted","url":"https://cachefly.cachefly.net/100mb.test"},{"label":"Cachefly 200MB(Trusted)","url":"https://cachefly.cachefly.net/200mb.test"},{"label":"vultr(新加坡)","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin"},{"label":"vultr(纽约)","url":"https://nj-us-ping.vultr.com/vultr.com.1000MB.bin"},{"label":"linode(日本东京市)","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin"},{"label":"BBC中文网","url":"https://emp.bbci.co.uk/emp/dashjs/3.2.0-8/dash.all.min.js"},{"label":"GitHub文件加速(Cloudflare)","url":"https://gh.con.sh/https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v2.21.12/Waifu2x-Extension-GUI-v2.21.12-Portable.7z"}]},{"badge":"08","name":"流量杀手 · Traffic Killer","host":"siriling.github.io","url":"https://siriling.github.io/traffic-killer/dist/","impl":"原生 fetch 流式读取 · GitHub Pages 静态站","tags":["流式读取","多线程","流量上限","后台运行"],"desc":"1–32 线程流式下载，支持 GB 流量上限、后台音乐保活、地区与延迟检测；纯静态托管在 GitHub Pages，源码思路与流量消耗器同源。","threads":"默认 1 线程（1–32 可调）","defaults":[{"label":"百度 CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk"}],"sources":[{"label":"百度CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk"},{"label":"七牛云CDN [高速]","url":"https://kodo-toolbox.qiniu.com/kodo-browser-Linux-x64-v1.0.17.zip"},{"label":"阿里CDN","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png"},{"label":"腾讯CDN","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561"},{"label":"字节跳动","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png"},{"label":"京东","url":"https://img10.360buyimg.com/live/jfs/t1/128947/12/26918/1361527/6260e71bE0ee85af5/ecaa17ea8dd3dddb.jpg"},{"label":"网易","url":"https://pic-bucket.ws.126.net/photo/0003/2022-04-24/H5N2082C00AJ0003NOS.jpg"},{"label":"小米","url":"https://cnbj0.fds.api.xiaomi.com/b2c-data-mishop/9b9d95e1ece27d5ec75205e5fe719ba5.apk"},{"label":"Vivo","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4"},{"label":"咪咕音乐","url":"https://d.musicapp.migu.cn/upload/fbpt_rsync_apps/local/signed/MobileMusic7220/MobileMusic7220_0140068.apk"},{"label":"咪咕视频","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg"},{"label":"和彩云","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"},{"label":"天翼云","url":"https://vod-origin-rjzy.gdoss.xstore.ctyun.cn/07da9eb52ad948c7b58b760003c0006b.mp4"},{"label":"Cachefly Test [Global]","url":"https://cachefly.cachefly.net/100mb.test"},{"label":"Cloudflare Speed [Global]","url":"https://speed.cloudflare.com/__down?bytes=1073741824"}]}]};
+var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whiteyun.com","url":"https://net.whiteyun.com/","impl":"原生 JS · fetch 带 Range + ReadableStream 流式读取","tags":["流式读取","多线程","智能分流","Range"],"desc":"按地区自动分流的多节点面板，默认 10 线程并发，逐块统计真实接收字节；内置节点健康检测、历史记录、流量上限与多语言/深浅主题。","threads":"默认 10 线程（1–10 可选）","defaults":[{"label":"智能高速 · CacheFly 100MB","url":"https://cachefly.cachefly.net/100mb.test"}],"sources":[{"label":"Bunny CDN 100MB · 100 MB","url":"https://test.b-cdn.net/100MB.bin","group":"全球 CDN","kind":"stream","kindLabel":"测速流"},{"label":"Bunny CDN 1GB · 1 GB","url":"https://test.b-cdn.net/1000MB.bin","group":"全球 CDN","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare 95MB · 95.4 MB","url":"https://speed.cloudflare.com/__down?bytes=99999999","group":"全球 CDN","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare CDN 50MB · 48 MB","url":"https://speed.cloudflare.com/__down?bytes=50000000","group":"咕噜测速","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 东京 · 100 MB","url":"https://tyo.download.datapacket.com/100mb.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 伊斯坦布尔 · 100 MB","url":"https://ist.download.datapacket.com/100mb.bin","group":"中东非洲","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 圣保罗 · 100 MB","url":"https://sao.download.datapacket.com/100mb.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 新加坡 · 100 MB","url":"https://sgp.download.datapacket.com/100mb.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 法兰克福 · 100 MB","url":"https://fra.download.datapacket.com/100mb.bin","group":"欧洲区域","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 洛杉矶 · 100 MB","url":"https://lax.download.datapacket.com/100mb.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 约翰内斯堡 · 100 MB","url":"https://jnb.download.datapacket.com/100mb.bin","group":"中东非洲","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 纽约 · 100 MB","url":"https://nyc.download.datapacket.com/100mb.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"DataPacket 香港 · 100 MB","url":"https://hkg.download.datapacket.com/100mb.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 东京 · 100 MB 流","url":"https://cc1-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 伦敦 · 100 MB 流","url":"https://thn2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 新加坡 · 100 MB 流","url":"https://sg1-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 法兰克福 · 100 MB 流","url":"https://fr5-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 洛杉矶 · 100 MB 流","url":"https://la2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 纽约 · 100 MB 流","url":"https://ny2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 迪拜 · 100 MB 流","url":"https://eti-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 阿姆斯特丹 · 100 MB 流","url":"https://am3-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 首尔 · 100 MB 流","url":"https://kx-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"Gcore 香港 · 100 MB 流","url":"https://hk2-speedtest.tools.gcore.com/speedtest-backend/garbage.php?ckSize=100&cors=true","group":"专业测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 伦敦 · 100 MB 流","url":"https://lon.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 布拉格 · 100 MB 流","url":"https://speedtest.cesnet.cz/backend/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 法兰克福 · 100 MB 流","url":"https://fra.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 洛杉矶 · 100 MB 流","url":"https://la.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 纽约 · 100 MB 流","url":"https://nyc.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 罗马 · 100 MB 流","url":"https://st-be-rm2.infra.garr.it/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 赫尔辛基 · 100 MB 流","url":"https://www.librespeed.fi/backend/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"LibreSpeed 阿姆斯特丹 · 100 MB 流","url":"https://ams.speedtest.clouvider.net/backend/garbage.php?ckSize=100&cors=true","group":"社区测速","kind":"stream","kindLabel":"测速流"},{"label":"TestFile 100MB · 100 MB","url":"https://dl.testfile.cc/100mb.dat","group":"文件测试","kind":"stream","kindLabel":"测速流"},{"label":"TestFile 200MB · 200 MB","url":"https://dl.testfile.cc/200mb.dat","group":"文件测试","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 东京 1GB · 1 GB","url":"https://hnd-jp-ping.vultr.com/vultr.com.1000MB.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 东京 · 100 MB","url":"https://hnd-jp-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 亚特兰大 · 100 MB","url":"https://ga-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 伦敦 · 100 MB","url":"https://lon-gb-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 大阪 · 100 MB","url":"https://osk-jp-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 巴黎 · 100 MB","url":"https://par-fr-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 悉尼 · 100 MB","url":"https://syd-au-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 新加坡 1GB · 1 GB","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 新加坡 · 100 MB","url":"https://sgp-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 新泽西 · 100 MB","url":"https://nj-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 法兰克福 1GB · 1 GB","url":"https://fra-de-ping.vultr.com/vultr.com.1000MB.bin","group":"欧洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 法兰克福 · 100 MB","url":"https://fra-de-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 洛杉矶 · 100 MB","url":"https://lax-ca-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 西雅图 · 100 MB","url":"https://wa-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 达拉斯 · 100 MB","url":"https://tx-us-ping.vultr.com/vultr.com.100MB.bin","group":"美洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 阿姆斯特丹 · 100 MB","url":"https://ams-nl-ping.vultr.com/vultr.com.100MB.bin","group":"欧洲区域","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 首尔 · 100 MB","url":"https://sel-kor-ping.vultr.com/vultr.com.100MB.bin","group":"亚太区域","kind":"stream","kindLabel":"测速流"},{"label":"智能高速 · 多节点持续","url":"https://cachefly.cachefly.net/100mb.test","group":"高速推荐","kind":"stream","kindLabel":"测速流"},{"label":"58 同城视频 · 11 MB","url":"https://bhvideo008.58wos.com.cn/SaQpOnMlKSz/sydctransform/8910dd89-37cb-4c90-a3e2-69273fad633c.1763882874868.51544-1790848043.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"OPPO 手机 · 4.8 MB","url":"https://msecfs.opposhop.cn/video-comment/20251122/728798a09fbd0f7697e26185286313341479038639_20251122014408_720.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"vivo 手机 · 9.8 MB","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/product/1761905418761/images/pc/appearance.webm","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"中国移动视频 · 38 MB","url":"https://obs-wx-ysj-xnl-pro-001.obs.cidc-rp-12.joint.cmecloud.cn/public/video/20250805-101631.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"今日头条 · 20 MB","url":"https://lf9-static.bytednsdoc.com/obj/eden-cn/uhbfnupkbps/video/earth_v6.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"华为云 CDN 高速 · 26 MB","url":"https://res-video.hc-cdn.com/cloudbu-site/china/zh-cn/WeLink/0416/1618543170266000950.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"华为云测速 3 · 2.0 MB","url":"https://res-video.hc-cdn.com/cloudbu-site/china/zh-cn/yunying/token/banner-pc-03.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"天翼云盘 · 4.0 MB","url":"https://cloud.dlife.cn/web/main/video/fast-banner.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"夸克 / UC · 69 MB","url":"https://image.uc.cn/s/uae/g/3o/broccoli/resource/202512/fe2b35d3a8a02cf4.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"小米产品视频 · 18 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/product-images/new-product-images/xiaomi-17-pro_28479/media/LofIC.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"小米小爱同学 · 23 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/aife/ai-hyper-xiaoai-fe/build/static/media/video1.02c63230.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"小米影像视频 1 · 49 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/mi-mall/e8b84f9055fc9278399f2d7367ac24d0.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"小米影像视频 2 · 19 MB","url":"https://cdn.cnbj1.fds.api.mi-img.com/mi-mall/87842e2015e55d816588da5c591d75f0.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"理想汽车 · 78 MB","url":"https://p.ampmake.com/lilibrary/hd/863473025131367/5426f9e9-b1d2-42dc-9c1b-56b2b386c9ab.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"百度云 CDN 1 · 4.9 MB","url":"https://now.bdstatic.com/store/v2/6a045a1/easy-landing/fce7099/product/tab1_mobileeae3c5.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"百度云 CDN 2 · 6.6 MB","url":"https://now.bdstatic.com/store/v2/6a045a1/easy-landing/fce7099/product/tab1_video56dd07.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"百度云 CDN 3 · 6.9 MB","url":"https://adsmind.ugdtimg.com/ads_svp_video__0bc3duaxyaabxaaeqh5veztrwhiepqoqc7ca.f140010.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"网易云音乐 · 5.5 MB","url":"https://s5.music.126.net/static_public/5d2e7e0f4c302eee822efc3d_5d2e7e0f4c302eee822efc3f/27f10e613772ca9aa2cca89f35be6c17.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"美团外卖 · 26 MB","url":"https://s3plus.meituan.net/v1/mss_f5ecef526b384cbaa1117230d53b4bd6/smart/%E6%96%B0%E5%B0%8F%E9%BB%84%E8%9C%82_xflyci.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"腾讯视频 1 · 7.4 MB","url":"https://gif.media.qpic.cn/mzc00200znyfa5u_415_237_1765789929765/0","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"腾讯视频 2 · 8.1 MB","url":"https://vcover-vt-pic.puui.qpic.cn/vcover_vt_pic/0/mzc00200vbafupy1766113338801/0","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"阿里云 CDN 视频 · 22 MB","url":"https://cloud.video.taobao.com/vod/ob_elzAR0USI6YAmmXUvGkOsCWV-ZbhN1JGSkbBYxoc.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"陌陌网 · 14 MB","url":"https://s.momocdn.com/s1/u/babbigjacc/momo-website/video/momoTVC-1024-new.mp4","group":"咕噜测速","kind":"video","kindLabel":"视频"},{"label":"360 图片 1 · 285 KB","url":"https://se2.360simg.com/t0102fc738fc2661fdf.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"360 图片 2 · 680 KB","url":"https://p3.ssl.qhimg.com/t110b9a9301ac4f37095210fc56.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"360 图片 3 · 9.4 MB","url":"https://p1.ssl.qhimg.com/t110b9a930136de37ef66d49549.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"58 同城图片 · 579 KB","url":"https://img.58cdn.com.cn/git/teg-app-fe/vr-house-viewer-V5-test/static/v5.8.7/loc_sprite_60page_556_d00c8bea.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"Steam Akamai · 10.3 MB","url":"https://cdn.akamai.steamstatic.com/steam/apps/1063730/extras/NW_Sword_Sorcery_2.gif","group":"全球 CDN","kind":"image","kindLabel":"图片"},{"label":"WPS 365 · 827 KB","url":"https://qn.cache.wpscdn.cn/encs/plus/img/footer-banner.new.3b49ee8.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"YY 直播 · 1.0 MB","url":"https://emyms.bs2cdn.yy.com/rubiks-material/675bad380e1bce56c2be49ec.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"七猫中文网 · 2.7 MB","url":"https://cdn.qimao.com/bookimg/zww/upload/avatar/0/1690174000789916.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"乐视 TV 1 · 1.8 MB","url":"https://i0.letvimg.com/lc19_iscms/202404/18/19/28/8bd92ce0634a403bb62c79c2e17db8de.gif","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"乐视 TV 2 · 416 KB","url":"https://i3.letvimg.com/lc07_iscms/202311/21/14/57/61e544fc3e164462a3324a12d773a64e.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"九秀直播 · 460 KB","url":"https://img1.imgtx.9xiuzb.com/upload/idcard/2026/01/26/107576832162920ihopyd5itp.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"企鹅直播 · 270 KB","url":"https://upstatic.qiecdn.com/upload/homeset/202201241426092718.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"千图网 · 4.2 MB","url":"https://icon.qiantucdn.com/images/assets/2025-11_q_6927ba5e1d8d8_86.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"华为云测速 1 · 1.4 MB","url":"https://res-static.hc-cdn.cn/cloudbu-site/china/zh-cn/welink_guanwang/20220718-153150(WeLinkPC).png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"华为云测速 2 · 449 KB","url":"https://res-static.hc-cdn.cn/cloudbu-site/china/zh-cn/active.webp","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"同程旅行动图 · 1.3 MB","url":"https://file.40017.cn/tcweb/pc/img/index/dt-rocket-icon.gif","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"同程旅行图片 · 2.1 MB","url":"https://pavo.elongstatic.com/i/ori/nw_000f9DQc.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"咪咕爱看 · 2.5 MB","url":"https://img.aikan.miguvideo.com/publish/noms/2024/04/22/1O5MNLF3AN2JL.gif","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"咪咕视频 · 379 KB","url":"https://img.cmvideo.cn/sports/uploadImages/2025/12/15/1000000013861061b14e.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"小红书 · 732 KB","url":"https://fe-static.xhscdn.com/formula-static/spectrum/public/img/display-img.5e021ab.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"微盟 · 2.8 MB","url":"https://cdn2.weimob.com/saas/@assets/saas-fe-website-web-stc/_next/static/media/banner.c6ce7a1d.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"战旗直播 · 984 KB","url":"https://img3.zhanqi.tv/uploads/2019/01/b0c82-2019011417081900437.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"探探网 · 891 KB","url":"https://static.tancdn.com/pe-webplatform/7GoUBNUgYZLB-C8sJFWh7Ksp.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"搜狐 TV · 211 KB","url":"https://photocdn.tv.sohu.com/img/20251203/vrsa_ver9971025.webp","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"搜狐视频 · 336 KB","url":"https://photocdn.tv.sohu.com/img/q_mini/20260301/frag_item_1772380307925_qo.webp","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"斗鱼 TV · 548 KB","url":"https://sta-op.douyucdn.cn/douyu-vrp-admin/2025/12/12/4c16574ed9e337ff56203126a971e1f0.jpg/cwebp","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"有赞 CDN · 458 KB","url":"https://img01.yzcdn.cn/upload_files/2025/03/21/398a201eefaa5133b6566ce13d660117.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"橙篇 AI · 短时文件","url":"https://edu-wenku.bdimg.com/v1/pc/aigc/big-square-img-1716650513807.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"特斯拉汽车 · 454 KB","url":"https://digitalassets-shop.tesla.cn/image/upload/f_auto,q_auto/v1/content/dam/tesla/CAR_ACCESSORIES/MODEL_3/INTERIOR/2057184-00-A_0_2000.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"猫眼演出 1 · 1.7 MB","url":"https://p1.pipi.cn/mediaplus/fantasy_perform_fe/e42958fc77e77e9fd1b7863810148f76001f3.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"猫眼演出 2 · 1.7 MB","url":"https://p1.pipi.cn/mediaplus/fantasy_perform_fe/e42958fc8b077e8dd425ce4b5a1dde0d4c360.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"电信邮箱 · 278 KB","url":"https://189mail.dlife.cn/web/webmail/jsp/189misc/client/images/bg_left.238fe8c4.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"百合网 · 835 KB","url":"https://images10.baihe.com/login/201412/bj.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"网易游戏 · 3.0 MB","url":"https://g.fp.ps.netease.com/cg-image/file/69266e64c57280dc95d55a46102I2hmR07","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"联想电脑 · 1.5 MB","url":"https://p4.lefile.cn/product/adminweb/2025/04/25/B4kyiylqKwSC9xZZNhYwbk3nm-8718.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"虎牙直播 · 773 KB","url":"https://huyaimg.msstatic.com/cdnimage/upcoming/up_17682955298761_pic.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"金山毒霸 · 1.1 MB","url":"https://www.ijinshan.com/vip/vip/img/secret-clean.a9684b3.png","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"阿里云 CDN 图片 · 264 KB","url":"https://img.alicdn.com/imgextra/i4/O1CN01ayOUUU1eYvHzJ2FA4_!!6000000003884-0-tps-5760-2080.jpg","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"鲁大师资源 · 1.3 MB","url":"https://cdn-file.ludashi.com/web/lds_laboratory_new/static/media/fluent.98738dbc27a6da98028f.gif","group":"咕噜测速","kind":"image","kindLabel":"图片"},{"label":"中国移动云盘新版 · 144 MB","url":"https://yun.mcloud.139.com/mCloudPc/v860/mCloud-8.6.0-001.exe","group":"咕噜测速","kind":"package","kindLabel":"安装包"},{"label":"中国移动云盘高速 1 · 118 MB","url":"https://yun.mcloud.139.com/mCloudPc/v832/mCloud_Setup-001.exe","group":"咕噜测速","kind":"package","kindLabel":"安装包"},{"label":"京东 APP · 128 MB","url":"https://storage.jd.com/jdmobile/JDMALL-PC2.apk","group":"咕噜测速","kind":"package","kindLabel":"安装包"},{"label":"天翼云桌面 · 83 MB","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe","group":"国内线路","kind":"package","kindLabel":"安装包"},{"label":"拼多多 · 28 MB","url":"https://cd.pddpic.com/volantis-open/mobile-CI-tag/2025-12-16/3f0d9c696148843dafb0a10b27ccc0f6.apk","group":"咕噜测速","kind":"package","kindLabel":"安装包"},{"label":"爱奇艺 CDN · 32 MB","url":"https://app.iqiyi.com/lequ/20260707/qiyiguo_official16.7.0.apk","group":"咕噜测速","kind":"package","kindLabel":"安装包"},{"label":"爱奇艺高速 · 89 MB","url":"https://cdndata.video.iqiyi.com/cdn/pca/20260818/14.8.0.10198/channel/1787041585340/IQIYIsetup_app.exe","group":"国内线路","kind":"package","kindLabel":"安装包"},{"label":"鲁大师安装包 · 141 MB","url":"https://cdn-file-ssl-pc.ludashi.com/pc/ldsstu/premium/ludashisetup.exe","group":"咕噜测速","kind":"package","kindLabel":"安装包"},{"label":"中国移动云盘高速 2 · 2.4 GB","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip","group":"咕噜测速","kind":"archive","kindLabel":"压缩包"},{"label":"抖音视频 · 2.6 MB","url":"https://lf-douyin-pc-web.douyinstatic.com/obj/douyin-pc-web/ies/douyin_web/66921.c56228db.js","group":"咕噜测速","kind":"script","kindLabel":"脚本"},{"label":"豆包 AI · 2.0 MB","url":"https://lf-flow-web-cdn.doubao.com/obj/flow-doubao/doubao/chat/static/js/async/7359.ab07cdf0.js","group":"咕噜测速","kind":"script","kindLabel":"脚本"},{"label":"哔哩哔哩 · 765 KB","url":"https://s1.hdslb.com/bfs/static/jinkela/long/font/HarmonyOS_Regular.d.woff2","group":"咕噜测速","kind":"font","kindLabel":"字体"},{"label":"芒果 TV · 2.1 MB","url":"https://img.shuziwenbo.cn/static/captain/_next/static/media/443a8609f096ffb6-s.p.ttf","group":"咕噜测速","kind":"font","kindLabel":"字体"},{"label":"讯飞星火 · 5.0 MB","url":"https://openres.xfyun.cn/xfyundoc/2025-07-13/3d97e261-2164-4d65-9a33-ec0eaeb77ff5/1752405451147/PingFangSC-Regular.woff2","group":"咕噜测速","kind":"font","kindLabel":"字体"},{"label":"BootCDN · 2.2 MB","url":"https://www.bootcdn.cn/assets/js/libraries-bootcss.min.json","group":"咕噜测速","kind":"other","kindLabel":"其他"}]},{"badge":"01","name":"来宝工具 · 流量消耗控制台","host":"labup.net","url":"https://labup.net/tools/network-traffic-test","impl":"React 工具页 · fetch + getReader 流式读取","tags":["流式读取","多线程"],"desc":"外部测速文件直连，不占本站带宽；默认 4 线程（1–32 可调），AbortController 停止，按峰值/平均速率与首包延迟统计。","threads":"默认 4 线程（1–32 可调）","defaults":[{"label":"Cloudflare Speed 10MB","url":"https://speed.cloudflare.com/__down?bytes=10485760"}],"sources":[{"label":"Cloudflare Speed Test","url":"https://speed.cloudflare.com/__down?bytes=10485760","kind":"stream","kindLabel":"测速流"},{"label":"Linode 100MB（日本东京）","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1GB（新加坡）","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"华为官网（图片资源）","url":"https://consumer.huawei.com/content/dam/huawei-cbg-site/cn/mkt/huawei-cloud-service/appgallery/application-boutique-pc1.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕视频（中国移动）","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg","kind":"image","kindLabel":"图片"},{"label":"哔哩哔哩（图片资源）","url":"https://static.hdslb.com/images/base/icons.png","kind":"image","kindLabel":"图片"},{"label":"移动云盘（中国移动）","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"阿里云（图片资源）","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png","kind":"image","kindLabel":"图片"},{"label":"京东商城（APK）","url":"https://storage.jd.com/jdmobile/JDMALL-PC2.apk","kind":"package","kindLabel":"安装包"},{"label":"百度网盘（安装包）","url":"https://issuecdn.baidupcs.com/issue/netdisk/yunguanjia/BaiduYunGuanjia_6.7.4.exe","kind":"package","kindLabel":"安装包"},{"label":"GitHub（静态资源）","url":"https://github.githubassets.com/assets/optimizely-f41bb566674d.js","kind":"script","kindLabel":"脚本"},{"label":"腾讯云（微信 JS SDK）","url":"https://res.wx.qq.com/open/js/jweixin-1.6.0.js","kind":"script","kindLabel":"脚本"}]},{"badge":"02","name":"网络面板 NetworkPanel","host":"net.netart.cn","url":"https://net.netart.cn/","impl":"Vue3 开源 NetworkPanel · fetch + getReader 流式读取","tags":["流式读取","多线程","自定义节点"],"desc":"开源 NetworkPanel（ljxi）部署版，默认 8 线程循环下载；支持自定义节点、NetworkPanelApi 动态解析与本地/Cloudflare 延迟检测。","threads":"默认 8 线程（可调）","defaults":[{"label":"和彩云（中国移动）","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png"}],"sources":[{"label":"Cachefly","url":"https://web1.cachefly.net/speedtest/downloading","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare Speed 95MB","url":"https://speed.cloudflare.com/__down?bytes=99614720","kind":"stream","kindLabel":"测速流"},{"label":"Microsoft Akamai","url":"https://img-prod-cms-rt-microsoft-com.akamaized.net/cms/api/am/imageFileData/RW16Ptm","kind":"image","kindLabel":"图片"},{"label":"Steam Akamai","url":"https://cdn.akamai.steamstatic.com/steam/apps/1063730/extras/NW_Sword_Sorcery_2.gif","kind":"image","kindLabel":"图片"},{"label":"Steam Cloudflare","url":"https://cdn.cloudflare.steamstatic.com/steam/apps/1063730/extras/NW_Sword_Sorcery_2.gif","kind":"image","kindLabel":"图片"},{"label":"和彩云（中国移动）","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"天翼云桌面（中国电信）","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe","kind":"package","kindLabel":"安装包"}]},{"badge":"03","name":"星芒工具箱 · 流量消耗器","host":"tool.starlumina.com","url":"https://tool.starlumina.com/tools/traffic-deplete.html","impl":"原生 JS · fetch 流式读取 + 跨域元素回退","tags":["流式读取","多线程","CORS 回退","后台运行"],"desc":"先探测 CORS，能流式读取时用 1–32 线程并发；跨域失败自动切换 img/video/script 元素加载并估算流量，支持后台音乐保活。","threads":"默认 1 线程（1–32 可调）","defaults":[{"label":"百度 CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk"}],"sources":[{"label":"Cachefly Test [Global]","url":"https://cachefly.cachefly.net/100mb.test","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare Speed [Global]","url":"https://speed.cloudflare.com/__down?bytes=1073741824","kind":"stream","kindLabel":"测速流"},{"label":"Vivo","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4","kind":"video","kindLabel":"视频"},{"label":"和彩云","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"咪咕视频","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg","kind":"image","kindLabel":"图片"},{"label":"哔哩哔哩","url":"https://i2.hdslb.com/bfs/openplatform/202506/ndIMphTF1750406775833.png","kind":"image","kindLabel":"图片"},{"label":"字节跳动","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png","kind":"image","kindLabel":"图片"},{"label":"网易","url":"https://pic-bucket.ws.126.net/photo/0003/2022-04-24/H5N2082C00AJ0003NOS.jpg","kind":"image","kindLabel":"图片"},{"label":"腾讯CDN","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png","kind":"image","kindLabel":"图片"},{"label":"阿里CDN","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png","kind":"image","kindLabel":"图片"},{"label":"天翼云","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/ff3e71dcc21152307f54700c62e5aef6","kind":"package","kindLabel":"安装包"},{"label":"百度CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk","kind":"package","kindLabel":"安装包"}]},{"badge":"04","name":"流量消耗器 by 紫曦","host":"net.zixiwu.cn","url":"https://net.zixiwu.cn/","impl":"Vue2 + axios · onDownloadProgress 统计进度","tags":["axios 进度","多线程"],"desc":"10 线程并发请求，用 axios 下载进度事件累计已接收字节；infinite 模式循环发起，随机参数避免缓存命中。","threads":"默认 10 线程","defaults":[{"label":"和彩云 1","url":"https://yun.mcloud.139.com/mCloud/mCloud_11.2.2_24112201_000.apk"}],"sources":[{"label":"Cachefly 100MB","url":"https://cachefly.cachefly.net/100mb.test","kind":"stream","kindLabel":"测速流"},{"label":"Linode 100MB(日本省东京市)","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(新加坡)","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(纽约)","url":"https://nj-us-ping.vultr.com/vultr.com.1000MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"cloudflare","url":"https://speed.cloudflare.com/__down?bytes=25000000","kind":"stream","kindLabel":"测速流"},{"label":"CCTV","url":"https://dh5.cntv.myhwcdn.cn/asp/h5e/hls/1200/0303000a/3/default/ec48b9f8c76e49af842d4942914ad663/1.ts","kind":"video","kindLabel":"视频"},{"label":"Smartisan OS 官网公共资源","url":"https://static.smartisanos.cn/common/video/production/ocean/os-1-1710.mp4","kind":"video","kindLabel":"视频"},{"label":"VIVO官网静态资源","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4","kind":"video","kindLabel":"视频"},{"label":"华为MateXT素材","url":"https://consumer.huawei.com/content/dam/huawei-cbg-site/cn/mkt/pdp/phones/mate-xt-ultimate-design/videos/hero/huawei-mate-xt-ultimate-design-kv.mp4","kind":"video","kindLabel":"视频"},{"label":"咪咕快游3","url":"https://freeserver.migufun.com/resource/beta/video/system/20210924112351666.mp4","kind":"video","kindLabel":"视频"},{"label":"网易公开课(白云山CDN)","url":"https://mov.bn.netease.com/open-movie/nos/mp4/2018/08/02/SDN92R2SB_sd.mp4","kind":"video","kindLabel":"视频"},{"label":"联通电视","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20230215/1625752132487675906.mp4","kind":"video","kindLabel":"视频"},{"label":"逆水寒官网静态资源","url":"https://n.v.netease.com/2024/0923/42971accb0826a176e4a6b7a3fdaccff.mp4","kind":"video","kindLabel":"视频"},{"label":"Wegame-静态资源加速","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png","kind":"image","kindLabel":"图片"},{"label":"七牛云","url":"https://dn-mars-assets.qbox.me/qiniulog/img-slogan-white-en.png","kind":"image","kindLabel":"图片"},{"label":"京东商城图片CDN服务","url":"https://img10.360buyimg.com/img/jfs/t1/176863/16/41608/14330/668e3421F64b41094/15c9d9130b980a51.png","kind":"image","kindLabel":"图片"},{"label":"和彩云2","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"字节CDN资源","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png","kind":"image","kindLabel":"图片"},{"label":"拼多多H5官网静态资源-图像小文件","url":"https://funimg.pddpic.com/c3affbeb-9b31-4546-b2df-95b62de81639.png.slim.png","kind":"image","kindLabel":"图片"},{"label":"拼多多IMG/CDN资源文件","url":"https://t00img.yangkeduo.com/chat/images/2022-12-12/79e0a4684de85c7b59f797819260be98.jpeg","kind":"image","kindLabel":"图片"},{"label":"联通官网静态资源1","url":"https://m1.ad.10010.com/small_video/uploadImg/1669798519261.png","kind":"image","kindLabel":"图片"},{"label":"腾讯游戏-静态资源加速1","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561","kind":"image","kindLabel":"图片"},{"label":"阿里图片CDN域名加速","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png","kind":"image","kindLabel":"图片"},{"label":"阿里系Gw","url":"https://gw.alicdn.com/tfscom/TB1fASCxhjaK1RjSZKzXXXVwXXa.jpg","kind":"image","kindLabel":"图片"},{"label":"AcFun","url":"https://cdn.aixifan.com/downloads/AcFun-acfunh5-release-6.62.0.1238_x64_60b608.apk","kind":"package","kindLabel":"安装包"},{"label":"MCLauncher网易版(阿里CDN)","url":"https://x19.gdl.netease.com/MCLauncher_1.14.0.36188.exe","kind":"package","kindLabel":"安装包"},{"label":"VIVO应用商店","url":"https://imgwsdl.vivo.com.cn/appstore/developer/soft/20210125/202101251051528awqa.apk","kind":"package","kindLabel":"安装包"},{"label":"和彩云1","url":"https://yun.mcloud.139.com/mCloud/mCloud_11.2.2_24112201_000.apk","kind":"package","kindLabel":"安装包"},{"label":"咪咕快游1","url":"https://plaza.cmgame.com:8443/resource/upload/records/tvapk/apk/6.9.1.0_0_5132_2021-12-29_10011000000_xw_sec_signed_signed_signed.apk","kind":"package","kindLabel":"安装包"},{"label":"咪咕快游2","url":"https://pc-dl.migufun.com:8443/channelpackage/mgame-2djSBy.exe","kind":"package","kindLabel":"安装包"},{"label":"天翼云1","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/5961fa22ee369eba433da6b0247eb11f","kind":"package","kindLabel":"安装包"},{"label":"天翼云2","url":"https://desk.ctyun.cn:8999/desktop-prod/software/android_client/20/64/102010101/clouddesktoc_phone_2.1.1_452_prod_102010101_2.1.1_signed.apk","kind":"package","kindLabel":"安装包"},{"label":"天翼云3-翼加密客户端","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/50218cd4d2286623049e374061cffd0e","kind":"package","kindLabel":"安装包"},{"label":"天翼云应用市场","url":"https://desk.ctyun.cn/desktop/software/clientsoftware/download/ff3e71dcc21152307f54700c62e5aef6","kind":"package","kindLabel":"安装包"},{"label":"支付宝开放平台1","url":"https://mdn.alipayobjects.com/ind_developertool/afts/file/A*fSAmSbgxLosAAAAAAAAAAAAADlx-AQ?af_fileName=AlipayKeyTool-2.0.3.dmg","kind":"package","kindLabel":"安装包"},{"label":"爱奇艺","url":"https://bdcdncnc.inter.71edge.com/cdn/pca/20231130/10.9.1.7348/channel/1701328986348/IQIYIsetup_z43.exe","kind":"package","kindLabel":"安装包"},{"label":"鲜牛加速器(华为云CDN)","url":"https://picture.xianniu.com/pc/download/4.6.9.3/xianniusetup.4.6.9.3.exe","kind":"package","kindLabel":"安装包"},{"label":"GitHub文件加速(cloudflare CDN)","url":"https://gh.con.sh/https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v2.21.12/Waifu2x-Extension-GUI-v2.21.12-Portable.7z","kind":"archive","kindLabel":"压缩包"},{"label":"上海灵羊1","url":"https://activity.hdslb.com/blackboard/static/20210604/4d40bc4f98f94fbc71c235832ce3efd4/hJEhL6jGOY.zip","kind":"archive","kindLabel":"压缩包"},{"label":"BBC中文网","url":"https://emp.bbci.co.uk/emp/dashjs/3.2.0-8/dash.all.min.js","kind":"script","kindLabel":"脚本"},{"label":"OPPP商城静态资源","url":"https://dsfs.oppo.com/oppo/shop-pc-v2/main/js/9fb472f.js","kind":"script","kindLabel":"脚本"},{"label":"支付宝开放平台2","url":"https://gw.alipayobjects.com/render/p/yuyan/180020010001210191/umi.9f3e4149.js","kind":"script","kindLabel":"脚本"},{"label":"斗鱼CDN-小文件","url":"https://shark2.douyucdn.cn/front-publish/live-master/lib/vendor-room_4e3a873.js","kind":"script","kindLabel":"脚本"}]},{"badge":"05","name":"闲云博客 · 流量消耗器","host":"lolicp.com","url":"https://lolicp.com/api/wasted_traffic_plus/","impl":"jQuery + 原生 fetch 流式读取","tags":["流式读取","多线程","运营商定向","流量上限","后台运行"],"desc":"按运营商与 App 分类的超大内置源（移动/联通/电信/腾讯/阿里/百度/咪咕等），默认 3 线程（1–64 可调），支持 GB 流量上限与后台音乐保活。","threads":"默认 3 线程（1–64 可调）","defaults":[{"label":"中国移动云盘 2.43G.zip [定向]","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip"}],"sources":[{"label":"Cachefly Test [Global]","url":"https://cachefly.cachefly.net/200mb.test","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare Speed [Global]","url":"https://speed.cloudflare.com/__down?bytes=25000000","kind":"stream","kindLabel":"测速流"},{"label":"Linode 100MB(日本省东京市)","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(德国)","url":"https://fra-de-ping.vultr.com/vultr.com.100MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(新加坡)","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(日本)","url":"https://hnd-jp-ping.vultr.com/vultr.com.100MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(纽约)","url":"https://nj-us-ping.vultr.com/vultr.com.1000MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(美国2)","url":"https://nj-us-ping.vultr.com/vultr.com.100MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"Vultr 1G(美国洛杉矶)","url":"https://lax-ca-us-ping.vultr.com/vultr.com.100MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"清华大学 [稳定]","url":"https://iptv.tsinghua.edu.cn/st/garbage.php?ckSize=10240","kind":"stream","kindLabel":"测速流"},{"label":"CCTV","url":"https://dh5.cntv.myhwcdn.cn/asp/h5e/hls/1200/0303000a/3/default/ec48b9f8c76e49af842d4942914ad663/1.ts","kind":"video","kindLabel":"视频"},{"label":"VIVO官网静态资源","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4","kind":"video","kindLabel":"视频"},{"label":"apple-静态资源4","url":"https://apptrailers.itunes.apple.com/itunes-assets/PurpleVideo221/v4/e5/b8/e1/e5b8e119-58bf-0a47-45d3-28519a8bfdf4/P850599853_Anull_video_gr290_sdr_886x1920-.mp4","kind":"video","kindLabel":"视频"},{"label":"书旗小说-视频广告01","url":"https://v4-lm.adukwai.com/bs2/photo-video-mz/5190117271491827886_31e5de0351720277_4636_sl200hd15.mp4?ss=vpm","kind":"video","kindLabel":"视频"},{"label":"书旗小说-视频广告02","url":"https://v4-lm.adukwai.com/bs2/adUnionVideo/9d088f4676a54e0b832dfc64facac497.mp4","kind":"video","kindLabel":"视频"},{"label":"哔哩哔哩-广告1","url":"https://i0.hdslb.com/bfs/vc/7a9f7ddb6dcde16031b89a3ec7d7e806aa8eeba9.webm","kind":"video","kindLabel":"视频"},{"label":"哔哩哔哩-静态资源1[定向]","url":"https://upos-sz-static.bilivideo.com/ssaxcode/m201120a222dw4bejcrhrq3gt815s4zd-1-SiteTool_1080.mp4","kind":"video","kindLabel":"视频"},{"label":"天翼云(中国电信)","url":"https://vod-origin-rjzy.gdoss.xstore.ctyun.cn/f9ea5388dc0447aa88a5b92f07f1a8f7.mp4","kind":"video","kindLabel":"视频"},{"label":"电信官网-静态资源2(中国电信)","url":"https://livepull.189.cn/live/youhui-1728184851.ts","kind":"video","kindLabel":"视频"},{"label":"百度视频-静态资源1","url":"https://jmy-video.baidu.com/7b828dab3003f3841f3a026b437cf879_1280_720.mp4","kind":"video","kindLabel":"视频"},{"label":"移动云手机-静态资源1[定向]","url":"https://cp.139.com/video/banner.mp4","kind":"video","kindLabel":"视频"},{"label":"网易公开课(白云山CDN)","url":"https://mov.bn.netease.com/movieMP4/2011/3/U/1/S6V22L0U1.mp4","kind":"video","kindLabel":"视频"},{"label":"逆水寒官网静态资源","url":"https://n.v.netease.com/2018/1017/ba32725ee3a20ee1fbe874a45d1f7fa9qt.mp4","kind":"video","kindLabel":"视频"},{"label":"Github-图片资源1","url":"https://github.githubassets.com/images/mona-whisper.gif","kind":"image","kindLabel":"图片"},{"label":"Github-图片资源2","url":"https://github.githubassets.com/assets/head_sss-adeeeaf1228e.jpg","kind":"image","kindLabel":"图片"},{"label":"Google-图片资源1","url":"https://i.ytimg.com/vi/j7WID3q1yY0/maxresdefault.jpg","kind":"image","kindLabel":"图片"},{"label":"Google-图片资源2","url":"https://play-lh.googleusercontent.com/B5AENJqFOd91t5cWZLTQbVUm7iDWzYVM1n0Pe2RI_46dhlWMtVAUBioUvy4YMXWdwA=w240-h480-rw","kind":"image","kindLabel":"图片"},{"label":"Google-图片资源2","url":"https://yt3.ggpht.com/PKRBxhCiGa8Y0vPmHa1E2cdjpLhUq2Pl-gESwP7kk2plGgxLdsbjyTd9VjcJwBMiY0HQ8bvx5Q=s176-c-k-c0x00ffffff-no-rj","kind":"image","kindLabel":"图片"},{"label":"Wegame-图片资源1","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png","kind":"image","kindLabel":"图片"},{"label":"Wegame-图片资源2","url":"https://tgphpic-70080.picnjc.qpic.cn/g.2001885-r.6702b/feeds_article_ugc_1461967d-c4c8-4f01-b11d-b5fe1ca89936/0","kind":"image","kindLabel":"图片"},{"label":"X-图片资源1","url":"https://pbs.twimg.com/amplify_video_thumb/1915351264088502272/img/WtcCdzQWaZ-bbW2h.jpg","kind":"image","kindLabel":"图片"},{"label":"X-图片资源2","url":"https://abs-0.twimg.com/emoji/v2/svg/1f914.svg","kind":"image","kindLabel":"图片"},{"label":"apple-图片资源1","url":"https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/60/60/23/606023fb-33d6-79e8-bcfe-7793257abd65/3_iOS_6.7.jpg/230x0w.webp","kind":"image","kindLabel":"图片"},{"label":"上海灵羊2","url":"https://i0.hdslb.com/bfs/sycp/creative_img/202204/757e134224a7b49d01737d72e87b3cd3.jpg","kind":"image","kindLabel":"图片"},{"label":"中国移动业务-图片资源2","url":"https://res.app.coc.10086.cn/group1/M00/03/0D/CtFOBmTxRyaAYjdGAAAhPGgdCJw206.png","kind":"image","kindLabel":"图片"},{"label":"中国移动云盘-图片资源(中国移动)","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"中国移动商城-图片资源1","url":"https://img1.shop.10086.cn/goods/ts27zarfe8d5jgvs_940x7200","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告01","url":"https://p2-lm.adukwai.com/udata/pkg/aW1hZ2UtcGtnOmFkX2RzcF9pbWFnZV91cGxvYWQ6Mzc4NDA0NTU0NzpNRVJDSEFOVDpbQkA2NjE0ZWI3MDoxMDY2MjcyNzk1MzU0Nw==.jpg","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告02","url":"https://sf3-fe-tos.pglstatp-toutiao.com/obj/ad-pattern/static/images/1700635544820_splashbackfor5.jpg","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告03","url":"https://img.meituan.net/content/f56fe3456d25d951cdd32efa56d608a290831.jpg","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告04","url":"https://p0.meituan.net/content/367fc11bb0ef629cb72988bfc5c9a930267166.jpg","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告05","url":"https://p1.meituan.net/linglong/2a7ff2c8b1928507c721c577762b8321285561.jpg","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告06","url":"https://sf3-fe-tos.pglstatp-toutiao.com/obj/ad-pattern/static/images/1701689556172_swipe-up.gif","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告07","url":"https://s3plus.meituan.net/v1/mss_5017c592a8a946d2a54eb62a76ba299c/nebulafile/e73d23a1d2929534c167ad61c75b8aae","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告08","url":"https://pgdt.ugdtimg.com/141/20204/snscosdownload/SZ/reserved/689059e200078a5908be7c8d71f701150000008d00004eec","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告09","url":"https://cdn.1rtb.com/s1000/jd.jpg","kind":"image","kindLabel":"图片"},{"label":"书旗小说-图片广告10","url":"https://p2-lm.adukwai.com/udata/pkg/aW1hZ2UtcGtnOmFkX2RzcF9pbWFnZV91cGxvYWQ6Mzc4NDA0NTU0NzpNRVJDSEFOVDpbQkA0OWQ1OTQ3Mjo0ODkyOTI5MzA3NTQ3.jpg","kind":"image","kindLabel":"图片"},{"label":"京东商城-图片资源1","url":"https://m.360buyimg.com/seckillcms/jfs/t1/155683/19/46720/143938/66de6069Fcbca5419/a04efd5dd680737d.png","kind":"image","kindLabel":"图片"},{"label":"京东商城-图片资源2","url":"https://img10.360buyimg.com/live/jfs/t1/128947/12/26918/1361527/6260e71bE0ee85af5/ecaa17ea8dd3dddb.jpg","kind":"image","kindLabel":"图片"},{"label":"优酷-图片资源1","url":"https://m.ykimg.com/0584000066BEC16C13EB661302C6D644","kind":"image","kindLabel":"图片"},{"label":"优酷-图片资源2","url":"https://liangcang-material.alicdn.com/prod/upload/b4cef471dbfb452fbff8a61102a8ca9a.webp.gif","kind":"image","kindLabel":"图片"},{"label":"优酷-图片资源3","url":"https://static.youku.com/user/avatar/1350/23.png","kind":"image","kindLabel":"图片"},{"label":"华为云-图片资源1","url":"https://res-static.hc-cdn.cn/cloudbu-site/china/zh-cn/HWCdeveloper/shemei/bilibili-qc.jpg","kind":"image","kindLabel":"图片"},{"label":"华为官网-图片资源1","url":"https://consumer.huawei.com/content/dam/huawei-cbg-site/cn/mkt/huawei-cloud-service/appgallery/application-boutique-pc1.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕善跑-图片资源1(中国移动)","url":"https://sportfile.migufun.com/Upload/dz/2019/0907/2405d7377e56a92f@1080x540.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕快游-图片资源1(中国移动)[非定向]","url":"https://wcache.migu.cn/prod/upload/game_resource/contentRelated/006212638000/84/1662605671282.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕快游-图片资源2(中国移动)","url":"https://freeserver.migufun.com/resource/beta/picture/system/20200806/20200806155030914.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕快游-图片资源2(中国移动)[非定向]","url":"https://static.migucloud.com/article/462/20191213/4f23d49723e5a46938718a3f4587734f.png","kind":"image","kindLabel":"图片"},{"label":"咪咕快游-图片资源3(中国移动)[非定向]","url":"https://scache.cmam.migu.cn/nuwa/culture/202309/20230905/model/m9100013009198/f1164326392847015936.png?timestamp=2332214977783&sid=2445210582&encrypt=936ee89150a3158eb577614473f425e5","kind":"image","kindLabel":"图片"},{"label":"咪咕快游-图片资源4(中国移动)[非定向]","url":"https://freeserver.migufun.com/resource/beta/picture/system/20211003/20211003124601120_28.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕快游-图片资源5(中国移动)","url":"https://gcache.migu.cn/prod/upload/game_resource/channel_for_homepage_game2/202408/2909/59/20240829095855985_mgwebp1.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕视频-图片资源1","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕视频-图片资源2","url":"https://wapx.cmvideo.cn/publish/poms/image/1752/094/251/202311151425_477841_HSJ1080H.jpg","kind":"image","kindLabel":"图片"},{"label":"哔哩哔哩-图片资源1[定向]","url":"https://static.hdslb.com/images/base/icons.png","kind":"image","kindLabel":"图片"},{"label":"哔哩哔哩-图片资源2","url":"https://tf-i0.hdslb.com/bfs/archive/e9f69c2718ea0d3813f43b9d80ef9b364368f46b.jpg","kind":"image","kindLabel":"图片"},{"label":"哔哩哔哩-广告2","url":"https://i0.hdslb.com/bfs/face/03525d094e0e2a142d08181532d729615c18ec92.jpg","kind":"image","kindLabel":"图片"},{"label":"哔哩哔哩-静态资源1[定向]","url":"https://static.hdslb.com/mobile/img/512.png","kind":"image","kindLabel":"图片"},{"label":"天翼云盘-图片资源1(中国电信)","url":"https://api.cloud.189.cn/guns/img/recommendedPosition/20240710094316_0710web.jpg","kind":"image","kindLabel":"图片"},{"label":"字节跳动前端公共库","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png","kind":"image","kindLabel":"图片"},{"label":"小米开放平台-静态资源3","url":"https://cdn.web-global.fds.api.mi-img.com/mcfe--mi-account/static/static/media/banner.92c693b4..jpg","kind":"image","kindLabel":"图片"},{"label":"微信红包-图片资源1[非定向]","url":"https://weixinredpacket.wxqcloud.qq.com/red2022/2/14/89.jpg","kind":"image","kindLabel":"图片"},{"label":"微信红包-图片资源2[定向]","url":"https://mmcomm.qpic.cn/wx_redskin/8kD42ndTK262mU9603rnaaTWiafyURYcfEnu1WAs85e3iby8WtwMKCAg/","kind":"image","kindLabel":"图片"},{"label":"拼多多-图片资源1","url":"https://funimg.pddpic.com/c3affbeb-9b31-4546-b2df-95b62de81639.png.slim.png","kind":"image","kindLabel":"图片"},{"label":"拼多多-图片资源1","url":"https://funimg.pddpic.com/common/recruit/43c56034-ce04-49fc-9227-0d24a8e82849.png","kind":"image","kindLabel":"图片"},{"label":"拼多多-图片资源2","url":"https://img.pddpic.com/gaudit-image/2024-06-01/3c2541af53af076d0b78c67fd51db13d.jpeg","kind":"image","kindLabel":"图片"},{"label":"拼多多-图片资源3","url":"https://cdn.pinduoduo.com/upload/official_website/6b1f700d-70c7-4f9f-890c-eb9f9ae68425.png","kind":"image","kindLabel":"图片"},{"label":"拼多多-图片资源4","url":"https://commimg.pddpic.com/add-crystal-outer/2023-04-11/70a3dea1-53d4-4da6-9397-d4bf2a884911.gif.slim.gif","kind":"image","kindLabel":"图片"},{"label":"拼多多-图片资源5","url":"https://t00img.yangkeduo.com/chat/images/2022-12-12/79e0a4684de85c7b59f797819260be98.jpeg","kind":"image","kindLabel":"图片"},{"label":"搜狐图片","url":"https://p8.itc.cn/c_fit,w_1800,h_1200,q_100/images01/20230723/e23a27186e404472ab1f659a1ae18cae.jpeg","kind":"image","kindLabel":"图片"},{"label":"搜狐视频","url":"https://photocdn.tv.sohu.com/img/20230419/pic_org_88f470db-176e-40c5-a514-a31993dabb27.jpg","kind":"image","kindLabel":"图片"},{"label":"爱奇艺-图片资源1","url":"https://pic9.iqiyipic.com/image/20240912/01/ec/v_176977887_m_601_m7_440_608.webp","kind":"image","kindLabel":"图片"},{"label":"爱奇艺-图片资源2","url":"https://pic0.iqiyipic.com/marketing/20200116/911b3739e5654f8c9e89e3a8fd51d74c.jpg","kind":"image","kindLabel":"图片"},{"label":"爱奇艺-图片资源3","url":"https://img7.iqiyipic.com/passport/20180804/fe/12/passport_2352240096_153335810673051_1080_1080.jpg","kind":"image","kindLabel":"图片"},{"label":"爱奇艺-图片资源4","url":"https://www.iqiyipic.com/common/fix/headicons/female04-130.png","kind":"image","kindLabel":"图片"},{"label":"爱奇艺-图片资源5","url":"https://static.g.iqiyi.com/qiplay2/e1339c7c-1cfc-458a-b165-62ec14e59f19.png","kind":"image","kindLabel":"图片"},{"label":"百度网盘-图片资源1","url":"https://staticsns.cdn.bcebos.com/amis/2023-11/1701055508610/light-hello.png","kind":"image","kindLabel":"图片"},{"label":"百度视频-图片资源1","url":"https://avatar.bdstatic.com/it/u=3525109608,2713994146&fm=3012","kind":"image","kindLabel":"图片"},{"label":"百度视频-图片资源2","url":"https://pic.rmb.bdstatic.com/baidu-rmb-video-cover-1/2024-1/1705996556941/724684ad74c9.png","kind":"image","kindLabel":"图片"},{"label":"百度贴吧-图片资源1","url":"https://tieba-ares.cdn.bcebos.com/mis/2022-5/1653034037345/186363ee83e9.png","kind":"image","kindLabel":"图片"},{"label":"百度贴吧-图片资源2","url":"https://imgsa.baidu.com/forum/pic/item/1e41a7014a90f603a3e0dea13412b31bb251edcc.jpg","kind":"image","kindLabel":"图片"},{"label":"知乎-图片资源","url":"https://picx.zhimg.com/v2-af7215f2d8266fec068e049b7559cd19.gif","kind":"image","kindLabel":"图片"},{"label":"移动云手机-图片资源1[定向]","url":"https://cp.139.com/_nuxt/img/member-img.c9e62ac.png","kind":"image","kindLabel":"图片"},{"label":"移动云手机-图片资源2[定向]","url":"https://cloudphoneh5.buy.139.com/cloudimage/dashboard/202108/1432606846652387328.png","kind":"image","kindLabel":"图片"},{"label":"移动云手机-图片资源3[定向]","url":"https://cloud.139.com/cloudimage/dashboard/202408/1824417436380827648.png","kind":"image","kindLabel":"图片"},{"label":"联通官网-图片资源1(中国联通)","url":"https://m1.ad.10010.com/small_video/uploadImg/1669798519261.png","kind":"image","kindLabel":"图片"},{"label":"联通官网-图片资源2(中国联通)","url":"https://www.10010.com/wt_service_web/copyright/images/jifenshangcheng.png","kind":"image","kindLabel":"图片"},{"label":"联通官网-图片资源3(中国联通)","url":"https://iservice.10010.com/wt_manage/uploadImg/1730297793913.png","kind":"image","kindLabel":"图片"},{"label":"腾讯游戏-静态资源1","url":"https://game.gtimg.cn/images/cf/cp/a20221219jansecond/t3_prop11.gif","kind":"image","kindLabel":"图片"},{"label":"腾讯游戏-静态资源2","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561","kind":"image","kindLabel":"图片"},{"label":"腾讯游戏-静态资源3[定向]","url":"https://ossweb-img.qq.com/images/lol/web201310/skin/big10001.jpg","kind":"image","kindLabel":"图片"},{"label":"腾讯视频-图片资源1","url":"https://community.image.video.qpic.cn/1234_1f0e95-5_1492899934_1726140843769309","kind":"image","kindLabel":"图片"},{"label":"腾讯视频-图片资源2","url":"https://image.video.qpic.cn/1234_a552e-16_630898403_1622953662941360","kind":"image","kindLabel":"图片"},{"label":"腾讯视频-图片资源3","url":"https://media-img.puui.qpic.cn/media_img/0/15204231726208958870/0","kind":"image","kindLabel":"图片"},{"label":"腾讯视频-图片资源4","url":"https://vcover-hz-pic.puui.qpic.cn/vcover_hz_pic/0/mzc00200x210zrt1725330684307/0","kind":"image","kindLabel":"图片"},{"label":"阿里云-图片资源1","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png","kind":"image","kindLabel":"图片"},{"label":"阿里云-图片资源2","url":"https://gw.alicdn.com/tfscom/TB1fASCxhjaK1RjSZKzXXXVwXXa.jpg","kind":"image","kindLabel":"图片"},{"label":"香港快运","url":"https://static.hkexpress.com/media/1077/crew-recruitment-banner-upload-sc.png","kind":"image","kindLabel":"图片"},{"label":"鹿角网络-图片资源","url":"https://web-ipv6.hycdn.cn/hypergryph/official/assets/img/arknights.8658b6.jpg","kind":"image","kindLabel":"图片"},{"label":"AcFun","url":"https://cdn.aixifan.com/downloads/AcFun-acfunh5-release-6.62.0.1238_x64_60b608.apk","kind":"package","kindLabel":"安装包"},{"label":"MCLauncher工具(阿里CDN)","url":"https://x19.gdl.netease.com/MCLauncherTool_0.1.4.50447.exe","kind":"package","kindLabel":"安装包"},{"label":"Quark_Browser(uc)","url":"https://image.uc.cn/s/uae/g/2i/uninstallpg/Quark%20Browser.apk","kind":"package","kindLabel":"安装包"},{"label":"VIVO应用商店","url":"https://imgwsdl.vivo.com.cn/appstore/developer/soft/20210125/202101251051528awqa.apk","kind":"package","kindLabel":"安装包"},{"label":"中国移动云盘-静态资源1(中国移动)","url":"https://yun.mcloud.139.com/mCloudPc/v811/mCloud_Setup-001.exe","kind":"package","kindLabel":"安装包"},{"label":"中国移动云盘-静态资源1[定向]","url":"https://yun.mcloud.139.com/mCloudPc/v832/mCloud_Setup-001.exe","kind":"package","kindLabel":"安装包"},{"label":"京东商城-静态资源4","url":"https://storage.jd.com/jdmobile/JDMALL-PC2.apk","kind":"package","kindLabel":"安装包"},{"label":"字节跳动-抖音","url":"https://www.douyin.com/download/pc/obj/douyin-pc-client/7044145585217083655/releases/10715336/2.6.0/win32-ia32/douyin-v2.6.0-win32-ia32-douyinDownload1.exe","kind":"package","kindLabel":"安装包"},{"label":"拼多多-静态资源4","url":"https://dl.pddpic.com/android_dev/2021-02-08/4ff25ce6148aa99aeeba723b5891ae72.apk","kind":"package","kindLabel":"安装包"},{"label":"拼多多-静态资源5","url":"https://cd.pddpic.com/android_dev/2023-07-28/5c04772968aee57ca690fbe1e7f29467.apk","kind":"package","kindLabel":"安装包"},{"label":"支付宝-静态资源1","url":"https://mdn.alipayobjects.com/ind_developertool/afts/file/A*fSAmSbgxLosAAAAAAAAAAAAADlx-AQ?af_fileName=AlipayKeyTool-2.0.3.dmg","kind":"package","kindLabel":"安装包"},{"label":"斗鱼CDN","url":"https://sta-op.douyucdn.cn/dyadmin-ext/pkg/pc/DY_OBS_Studio_Ext/20221208103446325/DYOBSStudioExtension_1.0.2.3.exe","kind":"package","kindLabel":"安装包"},{"label":"新浪","url":"https://i.apps.sina.cn/tqt/zip/com.sina.tianqitong_6.1892_2019.07.29.17.54.18.apk","kind":"package","kindLabel":"安装包"},{"label":"百度文库-静态资源1","url":"https://edu-wenku.bdimg.com/v1/na/0807/PC%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%89%88%E6%9C%AC%E5%8C%85/%E7%99%BE%E5%BA%A6%E6%96%87%E5%BA%93%20Setup%201.2.7.exe","kind":"package","kindLabel":"安装包"},{"label":"百度网盘-静态资源1","url":"https://issuecdn.baidupcs.com/issue/netdisk/yunguanjia/BaiduYunGuanjia_6.7.4.exe","kind":"package","kindLabel":"安装包"},{"label":"百度网盘-静态资源2","url":"https://wppkg.baidupcs.com/issue/netdisk/apk/BaiduNetdisk_10.1.02.apk","kind":"package","kindLabel":"安装包"},{"label":"移动云-静态资源1","url":"https://obs-wx-ysj-xnl-pro-001.obs.cidc-rp-12.joint.cmecloud.cn:443/public/upgrade/apk/baidu02/cloudphone-heyingyun-baidu02-v2.1.0-20240701_1446-release_20240701150412_sec_sign.apk","kind":"package","kindLabel":"安装包"},{"label":"网易云游戏","url":"https://nsh.gdl.netease.com/cloudgame_macos/NSH_cloud_game_for_mac_1.4.6_2023_06-02-11.dmg","kind":"package","kindLabel":"安装包"},{"label":"逆水寒客户端","url":"https://nsh.gdl.netease.com/NGP/NGP_NSH_2.0.81143.exe","kind":"package","kindLabel":"安装包"},{"label":"鲜牛加速器(华为云CDN)","url":"https://picture.xianniu.com/pc/download/4.7.3.5/xianniusetup.4.7.3.5.exe","kind":"package","kindLabel":"安装包"},{"label":"上海灵羊1","url":"https://activity.hdslb.com/blackboard/static/20210604/4d40bc4f98f94fbc71c235832ce3efd4/hJEhL6jGOY.zip","kind":"archive","kindLabel":"压缩包"},{"label":"中国移动云盘-静态资源1[定向]","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip","kind":"archive","kindLabel":"压缩包"},{"label":"哔哩CDN域名-阿里CDN","url":"https://s1.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip","kind":"archive","kindLabel":"压缩包"},{"label":"哔哩CDN域名-阿里CDN2","url":"https://s3.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip","kind":"archive","kindLabel":"压缩包"},{"label":"小米应用商店","url":"https://cnbj0.fds.api.xiaomi.com/miio.files/commonfile_zip_a348bd8c21030ba605d47331d4eb4663.zip","kind":"archive","kindLabel":"压缩包"},{"label":"微信-静态资源2","url":"https://res.wx.qq.com/wxdoc/dist/assets/media/aes-sample.eae1f364.zip","kind":"archive","kindLabel":"压缩包"},{"label":"微信-静态资源2[定向]","url":"https://res.wx.qq.com/open/zh_CN/htmledition/res/dev/download/sdk/WeChatSDK1.7.5.zip","kind":"archive","kindLabel":"压缩包"},{"label":"百度输入法","url":"https://imeres.baidu.com/imeres/ime-res/guanwang/img/Ubuntu_Deepin-fcitx-baidupinyin-64.zip","kind":"archive","kindLabel":"压缩包"},{"label":"Cloudflare-静态资源1","url":"https://challenges.cloudflare.com/turnstile/v0/g/ec4b873d446c/api.js","kind":"script","kindLabel":"脚本"},{"label":"Github-静态资源1","url":"https://github.githubassets.com/assets/optimizely-f41bb566674d.js","kind":"script","kindLabel":"脚本"},{"label":"Google-静态资源2","url":"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=YouTube+Sans:wght@300..900&display=swap","kind":"script","kindLabel":"脚本"},{"label":"Google-静态资源3","url":"https://apis.google.com/_/scs/abc-static/_/js/k=gapi.gapi.en.BY48SQoc80o.O/m=gapi_iframes,googleapis_client/rt=j/sv=1/d=1/ed=1/rs=AHpOoo-GDP1D38zSeS8hy4T0Ij3IgC1Nkw/cb=gapi.loaded_0","kind":"script","kindLabel":"脚本"},{"label":"Google-静态资源4","url":"https://ci3.googleusercontent.com/meips/ADKq_NZqxuLeMfNcPO4Ay_a-Dou4qiiMiv4gAfViS_OKenL5VotOnzCnWQkyFbrxhhtaxPWXL82OOFfhvmdKndVr0RtgT5m-b1GuO_sG-YmnmMdYllQ3I0OO81hy7pQt=s0-d-e1-ft","kind":"script","kindLabel":"脚本"},{"label":"Google-静态资源5","url":"https://ajax.googleapis.com/ajax/libs/angular_material/1.1.9/angular-material.min.js","kind":"script","kindLabel":"脚本"},{"label":"OPPP商城静态资源","url":"https://dsfs.oppo.com/oppo/shop-pc-v2/main/js/9fb472f.js","kind":"script","kindLabel":"脚本"},{"label":"QQ安全中心-静态资源1","url":"https://js.aq.qq.com/js/aq_common.js","kind":"script","kindLabel":"脚本"},{"label":"Wegame-静态资源1[统计不准确]","url":"https://cdn-go.cn/vasdev/web_webpersistance_v2/latest/flog.core.min.js","kind":"script","kindLabel":"脚本"},{"label":"Wegame-静态资源2[统计不准确]","url":"https://omi.cdn-go.cn/play/latest/assets/main.1840ac5c.js","kind":"script","kindLabel":"脚本"},{"label":"Wegame-静态资源3[统计不准确]","url":"https://beaconcdn.qq.com/sdk/4.3.4/beacon_web.min.js","kind":"script","kindLabel":"脚本"},{"label":"X-静态资源1","url":"https://abs.twimg.com/responsive-web/client-web/main.ef558a8a.js","kind":"script","kindLabel":"脚本"},{"label":"apple-静态资源1","url":"https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js","kind":"script","kindLabel":"脚本"},{"label":"apple-静态资源2","url":"https://js-cdn.music.apple.com/musickit/v2/amp/musickit.js","kind":"script","kindLabel":"脚本"},{"label":"apple-静态资源3","url":"https://js-cdn.music.apple.com/hls.js/2.610.3/hls.js/hls.js","kind":"script","kindLabel":"脚本"},{"label":"中国移动云盘-静态资源6(中国移动)","url":"https://dc.cmicapm.com:7080/minio.byterangers.onpremise.docor.static/collect-privity-v5.1.6.js","kind":"script","kindLabel":"脚本"},{"label":"京东商城-静态资源1","url":"https://wq.360buyimg.com/jdm-home-page/pages/js/index.aeba0df4.js","kind":"script","kindLabel":"脚本"},{"label":"京东商城-静态资源2","url":"https://storage.360buyimg.com/babelnode/jd-jssdk/4.2.1/jd-jssdk.js","kind":"script","kindLabel":"脚本"},{"label":"京东商城-静态资源3","url":"https://wl.jd.com/unify.min.js","kind":"script","kindLabel":"脚本"},{"label":"咪咕快游-静态资源1(中国移动)[非定向]","url":"https://h5cdn.migufun.com/middleh5/_nuxt/9d04212.js","kind":"script","kindLabel":"脚本"},{"label":"咪咕音乐-静态资源1","url":"https://wsdkdl.migu.cn/common/mgmusic/migu_https.js","kind":"script","kindLabel":"脚本"},{"label":"天翼云会议-静态资源1(中国电信)","url":"https://cloudmeeting.189.cn/static/js/chunk-vendors.624b9116.js","kind":"script","kindLabel":"脚本"},{"label":"天翼云盘-静态资源1(中国电信)","url":"https://static.e.189.cn/open/login/page/web/v5.0/static/js/captch.min.js?v1.1","kind":"script","kindLabel":"脚本"},{"label":"小米开放平台-静态资源2","url":"https://cdn.cnbj1.fds.api.mi-img.com/appstore-developer-web-fe/production/static/js/14.45dbc296.chunk.js","kind":"script","kindLabel":"脚本"},{"label":"小米开放平台-静态资源4","url":"https://mcfe--account-static-legacy.cnbj1.mi-fds.com/mcfe--account-static-legacy/static/prod/captcha-static/v2/js/v.js","kind":"script","kindLabel":"脚本"},{"label":"小米开放平台-静态资源5","url":"https://static-verify.sec.xiaomi.com/v2/js/v.js","kind":"script","kindLabel":"脚本"},{"label":"微信-静态资源1","url":"https://res.wx.qq.com/t/wx_fed/base/cover/red-envelope-cover-platform/res/js/chunk-vendors.0950cc00.js","kind":"script","kindLabel":"脚本"},{"label":"微信-静态资源1[定向]","url":"https://res.wx.qq.com/open/js/jweixin-1.6.0.js","kind":"script","kindLabel":"脚本"},{"label":"微信-静态资源3[定向]","url":"https://captcha.gtimg.com/1/tcaptcha-frame.28d99140.js","kind":"script","kindLabel":"脚本"},{"label":"微信红包-静态资源1[定向]","url":"https://finder.video.qq.com/268/20303/stodownload?encfilekey=Cvvj5Ix3eewK0tHtibORqcsqchXNh0Gf3LU4CKFYQgrxxGTryibGG1vrVQ7KQm6iaOMLz6w9ZA0D3wfMrS3Fy9NlABwmibfeWwibcWPialfiaYvFzwncHxxYnvyfibFVrQia6o0iaQ&token=x5Y29zUxcibBlhUrxSefJ9VWyNicsB4SJeDjc3XtiaThF8nzov4A9wwfOE76Jahic840782ticOwbZibw&idx=1&bizid=1023&hy=SH&m=&scene=0","kind":"script","kindLabel":"脚本"},{"label":"拼多多-静态资源1","url":"https://static.pddpic.com/assets/js/react_pdd_50c6d8bdb252d256ae20_1026.js","kind":"script","kindLabel":"脚本"},{"label":"拼多多-静态资源2","url":"https://mcdn.pinduoduo.com/home/js/index.494d9edf.js","kind":"script","kindLabel":"脚本"},{"label":"拼多多-静态资源3","url":"https://lpcdn.pinduoduo.com/_next/static/chunks/74769-4e08eb3c27153a5f.js","kind":"script","kindLabel":"脚本"},{"label":"搜狐门户静态","url":"https://statics.itc.cn/web/v3/static/js/main-c200c3eba1.jsg","kind":"script","kindLabel":"脚本"},{"label":"支付宝-静态资源2","url":"https://gw.alipayobjects.com/render/p/yuyan/180020010001210191/umi.9f3e4149.js","kind":"script","kindLabel":"脚本"},{"label":"支付宝-静态资源3","url":"https://ur.alipay.com/tracert_a1911.js","kind":"script","kindLabel":"脚本"},{"label":"斗鱼CDN-小文件","url":"https://shark2.douyucdn.cn/front-publish/live-master/lib/vendor-room_4e3a873.js","kind":"script","kindLabel":"脚本"},{"label":"淘宝-静态资源2","url":"https://o.alicdn.com/tbhome/tbnav/index.js","kind":"script","kindLabel":"脚本"},{"label":"爱奇艺-静态资源1","url":"https://stc.iqiyipic.com/gaze/fingerprint/1.0.58/fingerprint.umd.min.js","kind":"script","kindLabel":"脚本"},{"label":"爱奇艺-静态资源2","url":"https://static.iqiyi.com/js/player_v3/pcweb.wonder.12.92.online.js","kind":"script","kindLabel":"脚本"},{"label":"爱奇艺-静态资源3","url":"https://static-s.iqiyi.com/qysdk/payment/static/js/main.js","kind":"script","kindLabel":"脚本"},{"label":"爱奇艺-静态资源5","url":"https://security.iqiyi.com/static/cook/v1/cooksdk.js","kind":"script","kindLabel":"脚本"},{"label":"电信官网-静态资源1(中国电信)","url":"https://bigdata-behaviordata.189.cn:9002/chinatelecom/chinatelecom.min.js","kind":"script","kindLabel":"脚本"},{"label":"百度文库-静态资源2","url":"https://wkstatic.bdimg.com/static/ndpcwenku/static/pcCoreClient/js/views/1b65f79a0217ad721cce.js","kind":"script","kindLabel":"脚本"},{"label":"百度网盘-静态资源3","url":"https://nd-static.bdstatic.com/m-static/v20-main/home/js/chunk-vendors.f3d214b0.js","kind":"script","kindLabel":"脚本"},{"label":"百度网盘-静态资源4","url":"https://staticiot.cdn.bcebos.com/union/badjs-sdk-min-2.0.0.js","kind":"script","kindLabel":"脚本"},{"label":"百度网盘-静态资源5","url":"https://code.bdstatic.com/npm/spy-client@2.0.3/dist/spy-client-basic.min.js","kind":"script","kindLabel":"脚本"},{"label":"百度视频-静态资源2","url":"https://hk.bdstatic.com/_next/static/chunks/1232.ab8e3fcb5239645f.js","kind":"script","kindLabel":"脚本"},{"label":"百度贴吧-静态资源1","url":"https://dlswbr.baidu.com/heicha/mm/2027/acs-2027.js","kind":"script","kindLabel":"脚本"},{"label":"百度贴吧-静态资源2","url":"https://efe-h2.cdn.bcebos.com/cliresource/@baidu/ubc-report-sdk/3.3.3/ubc-report-sdk.iife.polyfill.min.js","kind":"script","kindLabel":"脚本"},{"label":"百度贴吧-静态资源3","url":"https://dmpstatic.cdn.bcebos.com/weirwood-sdk/1/1.3.7/bundle.min.js","kind":"script","kindLabel":"脚本"},{"label":"百度贴吧-静态资源3","url":"https://tb5.bdstatic.com/api/wza/aria.js","kind":"script","kindLabel":"脚本"},{"label":"百度页游-静态资源1","url":"https://fenwan.cdn.bcebos.com/webgame/static/webgame/js/index.aea21658.js","kind":"script","kindLabel":"脚本"},{"label":"知乎-静态资源","url":"https://static.zhihu.com/parker/campaign/vendors.5b2b99d85429920d2342.js","kind":"script","kindLabel":"脚本"},{"label":"移动云-静态资源2","url":"https://ecloud.eos-guangzhou-1.cmecloud.cn/op-login-static/3.6.0/js/vendor.6a12e122d36e1092fd0e.js","kind":"script","kindLabel":"脚本"},{"label":"移动云手机-静态资源3","url":"https://api.cp.139.com/cgate/cme/v1/appUpgrade/version?channel=baidu01","kind":"script","kindLabel":"脚本"},{"label":"移动云手机-静态资源3","url":"https://lf3-data.volccdn.com/obj/data-static/log-sdk/collect/5.0/collect-rangers-v5.1.7.js","kind":"script","kindLabel":"脚本"},{"label":"联通官网-静态资源1(中国联通)","url":"https://www.10010.com/wt_service_web/js/header.js","kind":"script","kindLabel":"脚本"},{"label":"腾讯-静态资源[统计不准确]","url":"https://combo.b.qq.com/c/=/crm/wpa/release/3.3.8/wpa/APIs/addCustom.js,/crm/wpa/release/3.3.8/lang/extend.js,/crm/wpa/release/3.3.8/util/domain.js,/crm/wpa/release/3.3.8/wpa/WPA.js,/crm/wpa/release/3.3.8/wpa/wpaMgr.js,/crm/wpa/release/3.3.8/lang/browser.js,/crm/wpa/release/3.3.8/util/proxy.js,/crm/wpa/release/3.3.8/util/pad.js,/crm/wpa/release/3.3.8/util/Bits.js,/crm/wpa/release/3.3.8/util/getJSONP.js,/crm/wpa/release/3.3.8/util/cookie.js,/crm/wpa/release/3.3.8/util/events.js,/crm/wpa/release/3.3.8/util/onLoad.js,/crm/wpa/release/3.3.8/util/offset.js,/crm/wpa/release/3.3.8/util/Panel.js,/crm/wpa/release/3.3.8/util/onIframeLoaded.js,/crm/wpa/release/3.3.8/util/GUID.js,/crm/wpa/release/3.3.8/wpa/getQQVersion.js,/crm/wpa/release/3.3.8/wpa/ViewHelper.js,/crm/wpa/release/3.3.8/wpa/views.js?v=3.3.8.20160126","kind":"script","kindLabel":"脚本"},{"label":"腾讯视频-静态资源1","url":"https://iwan-s.video.qq.com/packages/game-popover/latest/bundle.js","kind":"script","kindLabel":"脚本"},{"label":"腾讯视频-静态资源2","url":"https://vm.gtimg.cn/thumbplayer/superplayer/1.35.4/superplayer.js","kind":"script","kindLabel":"脚本"},{"label":"腾讯视频-静态资源3","url":"https://staticfile.qq.com/qimei/qimeisdk-web/0.6.3/index.js","kind":"script","kindLabel":"脚本"},{"label":"阿里云-静态资源1","url":"https://g.alicdn.com/AWSC/fireyejs/1.228.23/fireyejs.js","kind":"script","kindLabel":"脚本"},{"label":"华为云-静态资源2","url":"https://portal.hc-cdn.com/cnpm-baseui/2.8.11/index.css","kind":"style","kindLabel":"样式"},{"label":"小米开放平台-静态资源1","url":"https://dev.mi.com/console/css/main.css","kind":"style","kindLabel":"样式"},{"label":"爱奇艺-静态资源4","url":"https://www.iqiyi.com/static/2024913091751/css/main.css","kind":"style","kindLabel":"样式"},{"label":"Google-静态资源1","url":"https://fonts.gstatic.com/s/roboto/v47/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2","kind":"font","kindLabel":"字体"},{"label":"华为云-静态资源1","url":"https://res.hc-cdn.com/cnpm-baseui/2.8.11/fonts/HuaweiSans-Bold.ttf","kind":"font","kindLabel":"字体"},{"label":"淘宝-静态资源3","url":"https://at.alicdn.com/t/a/font_403341_6q1chd11nes.woff2","kind":"font","kindLabel":"字体"},{"label":"联通云-静态资源2(中国联通)","url":"https://www.cucloud.cn/templets/1/default/common/fontStyle/SourceHanSansCN-Light.otf","kind":"font","kindLabel":"字体"},{"label":"Github-静态资源2","url":"https://github.githubassets.com/assets/cat-7c075cc3dda1.glb","kind":"other","kindLabel":"其他"},{"label":"七牛云","url":"https://devtools.qiniu.com/linux/amd64/qrsctl","kind":"other","kindLabel":"其他"},{"label":"咪咕音乐-静态资源2[统计不准确]","url":"https://webpay.migu.cn:8443/migunetsdk/webJs/frame.html?netId=b486900f41fc411187240dcb45fdbc8d&client=WWW&umark=Common2&protocol=https&mv=3.0.1&t=1704113156924","kind":"other","kindLabel":"其他"}]},{"badge":"06","name":"流量实验室 · 网络性能","host":"hhy.im","url":"https://hhy.im/","impl":"原生 JS · fetch + getReader 流式读取","tags":["流式读取","多线程","目标流量","图表"],"desc":"16 线程（1–64 可调）轮询多地址，URL 追加时间戳破缓存；支持目标流量到量自动停止、Mbps/MB/s 切换与 Canvas 实时速度图。","threads":"默认 16 线程（1–64 可调）","defaults":[{"label":"中国移动云盘 2.43G.zip（默认 7 地址轮询）","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip"}],"sources":[{"label":"和彩云图片","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"咪咕快游图片","url":"https://gcache.migu.cn/prod/upload/game_resource/channel_for_homepage_game2/202408/2909/59/20240829095855985_mgwebp1.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕爱看","url":"https://img.aikan.miguvideo.com/publish/noms/2024/04/22/1O5MNLF3AN2JL.gif","kind":"image","kindLabel":"图片"},{"label":"中国移动云盘安装包","url":"https://yun.mcloud.139.com/mCloudPc/v832/mCloud_Setup-001.exe","kind":"package","kindLabel":"安装包"},{"label":"天翼云桌面","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe","kind":"package","kindLabel":"安装包"},{"label":"中国移动云盘 2.43G.zip","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip","kind":"archive","kindLabel":"压缩包"},{"label":"咪咕音乐 JS","url":"https://wsdkdl.migu.cn/common/mgmusic/migu_https.js","kind":"script","kindLabel":"脚本"}]},{"badge":"07","name":"流量消失器","host":"shua.leyz.top","url":"https://shua.leyz.top/","impl":"Vue2 + axios · onDownloadProgress 统计进度","tags":["axios 进度","多线程","运营商定向"],"desc":"6 线程循环请求，axios 下载进度事件累计字节并计算瞬时速度；按运营商/App 分类的测试源，随机参数破缓存，支持无限循环。","threads":"默认 6 线程","defaults":[{"label":"朝夕光年游戏 mp4","url":"https://lf5-j1gamecdn-cn.dailygn.com/obj/lf-game-lf/gdl_app_2682/1233880772355.mp4"}],"sources":[{"label":"Cachefly 100MB(Trusted","url":"https://cachefly.cachefly.net/100mb.test","kind":"stream","kindLabel":"测速流"},{"label":"Cachefly 200MB(Trusted)","url":"https://cachefly.cachefly.net/200mb.test","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare①(海外)","url":"https://speed.cloudflare.com/__down?bytes=104857600","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare②(海外)","url":"https://speed.cloudflare.com/__down?bytes=524288000","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare③(海外)","url":"https://speed.cloudflare.com/__down?bytes=25000000","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare④(海外)","url":"https://speed.cloudflare.com/__down?bytes=1073741824","kind":"stream","kindLabel":"测速流"},{"label":"linode(日本东京市)","url":"https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin","kind":"stream","kindLabel":"测速流"},{"label":"vultr(新加坡)","url":"https://sgp-ping.vultr.com/vultr.com.1000MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"vultr(纽约)","url":"https://nj-us-ping.vultr.com/vultr.com.1000MB.bin","kind":"stream","kindLabel":"测速流"},{"label":"B站","url":"https://upos-sz-staticks3.bilivideo.com/ssaxcode/m201120a222dw4bejcrhrq3gt815s4zd-1-SiteTool_1080.mp4","kind":"video","kindLabel":"视频"},{"label":"CCTV","url":"https://dh5.cntv.myhwcdn.cn/asp/h5e/hls/1200/0303000a/3/default/ec48b9f8c76e49af842d4942914ad663/1.ts","kind":"video","kindLabel":"视频"},{"label":"vivo","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4","kind":"video","kindLabel":"视频"},{"label":"今日头条","url":"https://lf9-static.bytednsdoc.com/obj/eden-cn/uhbfnupkbps/video/earth_v6.mp4","kind":"video","kindLabel":"视频"},{"label":"咪咕快游②","url":"https://freeserver.migufun.com/resource/beta/video/system/20210924112351666.mp4","kind":"video","kindLabel":"视频"},{"label":"天翼云","url":"https://vod-origin-rjzy.gdoss.xstore.ctyun.cn/8ee30576c30d40518c4dae03f7eacf3c.mp4","kind":"video","kindLabel":"视频"},{"label":"夸克网盘","url":"https://cloud.video.taobao.com/play/u/null/p/1/e/6/t/1/442087612070.mp4","kind":"video","kindLabel":"视频"},{"label":"好看视频","url":"https://vd3.bdstatic.com/mda-pm9zn07ydwzhfw85/1080p/cae_h264/1702252000350219836/mda-pm9zn07ydwzhfw85.mp4","kind":"video","kindLabel":"视频"},{"label":"完美世界","url":"https://gamesvmg.wmupd.com/webops/10102.mp4","kind":"video","kindLabel":"视频"},{"label":"快手","url":"https://alimov2.a.kwimgs.com/upic/2024/11/18/17/BMjAyNDExMTgxNzM0NTFfMjQ2MzY1ODI4MV8xNDg5NTc1NTQwNDBfMl8z_b_Ba0e085802ad867415b13e560bab69dd2.mp4","kind":"video","kindLabel":"视频"},{"label":"朝夕光年游戏(点击此处可更换测速源)","url":"https://lf5-j1gamecdn-cn.dailygn.com/obj/lf-game-lf/gdl_app_2682/1233880772355.mp4","kind":"video","kindLabel":"视频"},{"label":"网易公开课(白云山CDN)","url":"https://mov.bn.netease.com/open-movie/nos/mp4/2015/11/26/SB8ECV1ST_sd.mp4","kind":"video","kindLabel":"视频"},{"label":"联通电视①(和②轮流使用)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20250116/25011618011879812384860807169.mp4?user=N/A&channelid=3000013947&contentid=91789000202501164552800&id=E92AAB52BB3EB9E86A77E4FE54F90ADC&timestamp=1737618506&isSegment=0","kind":"video","kindLabel":"视频"},{"label":"联通电视②(和①轮流使用)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20250116/25011618011879812383451521025.mp4?user=N/A&channelid=3000013947&contentid=91789000202501164552580&id=64DAD3ACBE0356AD6035212D7FAF8B9A&timestamp=1737618535&isSegment=0","kind":"video","kindLabel":"视频"},{"label":"联通电视③(轮流使用)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volte_mp4/20250116/25011612551879742395369840642.mp4?user=N/A&channelid=3000013947&contentid=91789000202501164520690&id=5CFB65B4EE0853F46353497CFA2B1BA1&timestamp=1737618838&isSegment=0","kind":"video","kindLabel":"视频"},{"label":"锤子(手机)","url":"https://static.smartisanos.cn/common/video/production/ocean/os-1-1710.mp4","kind":"video","kindLabel":"视频"},{"label":"WeGame","url":"https://wegame.gtimg.com/g.55555-r.c4663/wegame-home/sc02-03.514d7db8.png","kind":"image","kindLabel":"图片"},{"label":"京东","url":"https://img20.360buyimg.com/babel/jfs/t20271006/227634/23/27810/35856/67027beeF0cffb9fc/e68cd03835b91103.png","kind":"image","kindLabel":"图片"},{"label":"优酷视频","url":"https://jmy-pic.baidu.com/0/pic/1203225490_216151106_2084668354.jpg","kind":"image","kindLabel":"图片"},{"label":"咪咕快游①","url":"https://freeserver.migufun.com/resource/beta/picture/system/20200723/20200723104326220_sdpic.png","kind":"image","kindLabel":"图片"},{"label":"咪咕爱看","url":"https://img.aikan.miguvideo.com/publish/noms/2024/04/22/1O5MNLF3AN2JL.gif","kind":"image","kindLabel":"图片"},{"label":"咪咕视频①","url":"https://img.cmvideo.cn/publish/noms/2023/12/06/1O4SHFIFR36BD.gif","kind":"image","kindLabel":"图片"},{"label":"咪咕视频②","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg","kind":"image","kindLabel":"图片"},{"label":"字节跳动①","url":"https://lf1-cdn-tos.bytescm.com/obj/static/ies/bytedance_official/_next/static/images/8-4@2x-f85835b5e482bccf94c824067caac899.png","kind":"image","kindLabel":"图片"},{"label":"字节跳动②","url":"https://lf3-cdn-tos.bytescm.com/obj/ttfe/ATSX/mainland/video-poster_1576231362701.png","kind":"image","kindLabel":"图片"},{"label":"微软Azure","url":"https://cdn.microsoftstore.com.cn/media/product_long_description/3781-00000/2_dupn50xr/4h0yzz2_360.jpg","kind":"image","kindLabel":"图片"},{"label":"拼多多H5(图像文件)","url":"https://funimg.pddpic.com/c3affbeb-9b31-4546-b2df-95b62de81639.png.slim.png","kind":"image","kindLabel":"图片"},{"label":"拼多多img(CDN)","url":"https://t00img.yangkeduo.com/chat/images/2022-12-12/79e0a4684de85c7b59f797819260be98.jpeg","kind":"image","kindLabel":"图片"},{"label":"沃音乐①(联通公免)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volteposter/screenshot/20220129/1487368366712385537.jpeg","kind":"image","kindLabel":"图片"},{"label":"沃音乐②(联通公免)","url":"https://listen.10155.com/listener/womusic-bucket/90115000/mv_vod/volteposter/screenshot/20200805/1290977212593999873.jpeg","kind":"image","kindLabel":"图片"},{"label":"百度网盘①","url":"https://staticsns.cdn.bcebos.com/amis/2024-12/1733110167508/ec2943f8f5e27bd38f00c6e02.png","kind":"image","kindLabel":"图片"},{"label":"百度网盘③","url":"https://nd-static.bdstatic.com/m-static/wp-brand/img/banner.5783471b.png","kind":"image","kindLabel":"图片"},{"label":"移动","url":"https://img1.shop.10086.cn/goods/tcqtjwurkdsfcxgr_940x7200","kind":"image","kindLabel":"图片"},{"label":"移动云盘①","url":"https://img.mcloud.139.com/material_prod/material_media/20230605/1685935277971.jpg","kind":"image","kindLabel":"图片"},{"label":"移动云盘②","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"移动云盘②","url":"https://open.yun.139.com/static/img/case_bg_1.16716f8f.png","kind":"image","kindLabel":"图片"},{"label":"联通云","url":"https://www.cucloud.cn/upload/1717685645631.png","kind":"image","kindLabel":"图片"},{"label":"联通云智手机","url":"https://s3-sh-uphone.wostore.cn/ivr-dev-1/uphone/static/images/wallpaper/HomePage/JGQ001/H5/NoLogin/2-20251029105302322.jpg","kind":"image","kindLabel":"图片"},{"label":"联通公免①(手机电视)","url":"https://m1.ad.10010.com/small_video/uploadImg/1598021193891.jpg","kind":"image","kindLabel":"图片"},{"label":"联通公免②(手机电视)","url":"https://m1.ad.10010.com/small_video/uploadImg/1669798519261.png","kind":"image","kindLabel":"图片"},{"label":"腾讯①","url":"https://ossweb-img.qq.com/images/lol/web201310/skin/big10001.jpg","kind":"image","kindLabel":"图片"},{"label":"腾讯②","url":"https://ossweb-img.qq.com/upload/webplat/info/cf/20230717/653421385804853.png","kind":"image","kindLabel":"图片"},{"label":"腾讯③","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561","kind":"image","kindLabel":"图片"},{"label":"腾讯③-下载速度不正确","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif","kind":"image","kindLabel":"图片"},{"label":"腾讯视频","url":"https://puui.qpic.cn/vpic_cover/g3346tki83w/g3346tki83w_hz.jpg","kind":"image","kindLabel":"图片"},{"label":"钉钉","url":"https://gw.alicdn.com/tfs/TB1k07QUoY1gK0jSZFCXXcwqXXa-810-450.png","kind":"image","kindLabel":"图片"},{"label":"阿里系①","url":"https://gw.alicdn.com/tfscom/TB1fASCxhjaK1RjSZKzXXXVwXXa.jpg","kind":"image","kindLabel":"图片"},{"label":"阿里系②","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png","kind":"image","kindLabel":"图片"},{"label":"AcFun","url":"https://cdn.aixifan.com/downloads/AcFun-acfunh5-release-6.62.0.1238_x64_60b608.apk","kind":"package","kindLabel":"安装包"},{"label":"Quark_Browser","url":"http://image.uc.cn/s/uae/g/2i/uninstallpg/Quark_Browser_unins.apk","kind":"package","kindLabel":"安装包"},{"label":"喜马拉雅","url":"https://s1.xmcdn.com/yx/xmly-live-release/last/dist/Ximalaya-Live-Setup-4.18.550.exe","kind":"package","kindLabel":"安装包"},{"label":"天翼云桌面①","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202030001/CtyunClouddeskUniversal_2.3.0_202030001_x86_20240327104015_Setup.exe","kind":"package","kindLabel":"安装包"},{"label":"天翼云桌面②","url":"https://desk.ctyun.cn:8999/desktop-prod/software/windows_tob_client/15/64/202010003/CtyunClouddeskUniversal_2.1.0_202010003_x86_20230905151733_Setup_signed.exe","kind":"package","kindLabel":"安装包"},{"label":"小红书","url":"https://714-3.vod.tv.itc.cn/sohu/ifox/Lzk5LzI1Mi8iOJyyPTwssSSquySopbGYrBm6qDQjlzI2s5MyHpU/SHPlayer_3.28_18312.dmg","kind":"package","kindLabel":"安装包"},{"label":"拼多多①","url":"https://dl.pddpic.com/android_dev/2021-02-08/4ff25ce6148aa99aeeba723b5891ae72.apk","kind":"package","kindLabel":"安装包"},{"label":"拼多多②","url":"https://cd.pddpic.com/android_dev/2023-07-28/5c04772968aee57ca690fbe1e7f29467.apk","kind":"package","kindLabel":"安装包"},{"label":"新浪","url":"http://i.apps.sina.cn/tqt/zip/com.sina.tianqitong_6.1892_2019.07.29.17.54.18.apk","kind":"package","kindLabel":"安装包"},{"label":"爱奇艺","url":"https://static-d.iqiyi.com/ext/common/iQIYIMedia_000.dmg","kind":"package","kindLabel":"安装包"},{"label":"百度网盘②","url":"https://issuepcdn.baidupcs.com/issue/netdisk/yunguanjia/BaiduNetdisk_7.54.0.103.exe","kind":"package","kindLabel":"安装包"},{"label":"移动云盘①(原和彩云)","url":"https://download.mcloud.139.com/storageWeb/servlet/downloadServlet?code=SzgxODExZDZ2Q2sxOUUxOTYxN3JrVnNJQTJW&un=6546C54A4774C2E136C50775377C19D31D88D6B7A3149689E3A332B826A36331&dom=D960&rate=0&txType=0","kind":"package","kindLabel":"安装包"},{"label":"网易(阿里CDN)","url":"https://x19.gdl.netease.com/MCLauncher_publish_1.8.0.35383.exe","kind":"package","kindLabel":"安装包"},{"label":"网易云游戏","url":"https://a29.gdl.netease.com/CloudGame_setup_pc_x64_1.5.1.0039.exe","kind":"package","kindLabel":"安装包"},{"label":"量子密信","url":"https://imback.zdxlz.com/im2/download/%E9%87%8F%E5%AD%90%E5%AF%86%E4%BF%A1.apk","kind":"package","kindLabel":"安装包"},{"label":"阿里②(钉钉定向)","url":"https://gw.alipayobjects.com/os/volans-demo/f44c302e-b704-4a70-bcc6-0214e37ca256/MiniProgramStudio-1.17.4.exe","kind":"package","kindLabel":"安装包"},{"label":"鲜牛加速器(华为云CDN)","url":"https://picture.xianniu.com/pc/download/3.8.0.4/xianniusetup.3.8.0.4.exe","kind":"package","kindLabel":"安装包"},{"label":"B站①(阿里CDN)","url":"https://s1.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip","kind":"archive","kindLabel":"压缩包"},{"label":"B站②(阿里CDN)","url":"https://s3.hdslb.com/bfs/game-static/web/caster/static/script/vue/da3f37d7fd8339357ed671a94941757e/st.zip","kind":"archive","kindLabel":"压缩包"},{"label":"GitHub文件加速(Cloudflare)","url":"https://gh.con.sh/https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v2.21.12/Waifu2x-Extension-GUI-v2.21.12-Portable.7z","kind":"archive","kindLabel":"压缩包"},{"label":"七牛云","url":"https://kodo-toolbox.qiniu.com/kodo-browser-Linux-x64-v1.0.17.zip","kind":"archive","kindLabel":"压缩包"},{"label":"上海灵羊","url":"https://activity.hdslb.com/blackboard/static/20210604/4d40bc4f98f94fbc71c235832ce3efd4/hJEhL6jGOY.zip","kind":"archive","kindLabel":"压缩包"},{"label":"百度①","url":"https://imeres.baidu.com/imeres/ime-res/guanwang/img/Ubuntu_Deepin-fcitx-baidupinyin-64.zip","kind":"archive","kindLabel":"压缩包"},{"label":"移动云盘①","url":"https://yun.mcloud.139.com/hongseyunpan/2.43G.zip","kind":"archive","kindLabel":"压缩包"},{"label":"BBC中文网","url":"https://emp.bbci.co.uk/emp/dashjs/3.2.0-8/dash.all.min.js","kind":"script","kindLabel":"脚本"},{"label":"天翼云盘","url":"https://static.e.189.cn/open/login/page/web/v5.0/static/js/captch.min.js?v1.1","kind":"script","kindLabel":"脚本"},{"label":"拼多多H5(js文件)","url":"https://static.pddpic.com/assets/js/react_pdd_50c6d8bdb252d256ae20_1026.js","kind":"script","kindLabel":"脚本"},{"label":"斗鱼","url":"https://shark2.douyucdn.cn/front-publish/live-master/lib/vendor-room_4e3a873.js","kind":"script","kindLabel":"脚本"},{"label":"Cloudflare①(CDN)","url":"https://t1.geigei.gq","kind":"other","kindLabel":"其他"}]},{"badge":"08","name":"流量杀手 · Traffic Killer","host":"siriling.github.io","url":"https://siriling.github.io/traffic-killer/dist/","impl":"原生 fetch 流式读取 · GitHub Pages 静态站","tags":["流式读取","多线程","流量上限","后台运行"],"desc":"1–32 线程流式下载，支持 GB 流量上限、后台音乐保活、地区与延迟检测；纯静态托管在 GitHub Pages，源码思路与流量消耗器同源。","threads":"默认 1 线程（1–32 可调）","defaults":[{"label":"百度 CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk"}],"sources":[{"label":"Cachefly Test [Global]","url":"https://cachefly.cachefly.net/100mb.test","kind":"stream","kindLabel":"测速流"},{"label":"Cloudflare Speed [Global]","url":"https://speed.cloudflare.com/__down?bytes=1073741824","kind":"stream","kindLabel":"测速流"},{"label":"Vivo","url":"https://wwwstatic.vivo.com.cn/vivoportal/files/resource/funtouch/1651200648928/images/os2-jude-video.mp4","kind":"video","kindLabel":"视频"},{"label":"天翼云","url":"https://vod-origin-rjzy.gdoss.xstore.ctyun.cn/07da9eb52ad948c7b58b760003c0006b.mp4","kind":"video","kindLabel":"视频"},{"label":"京东","url":"https://img10.360buyimg.com/live/jfs/t1/128947/12/26918/1361527/6260e71bE0ee85af5/ecaa17ea8dd3dddb.jpg","kind":"image","kindLabel":"图片"},{"label":"和彩云","url":"https://img.mcloud.139.com/material_prod/material_media/20221128/1669626861087.png","kind":"image","kindLabel":"图片"},{"label":"咪咕视频","url":"https://img.cmvideo.cn/publish/noms/2022/10/14/1O3VIGPVP6HTS.jpg","kind":"image","kindLabel":"图片"},{"label":"字节跳动","url":"https://lf9-cdn-tos.bytecdntp.com/cdn/yuntu-index/1.0.4/case/maiteng/detailbg.png","kind":"image","kindLabel":"图片"},{"label":"网易","url":"https://pic-bucket.ws.126.net/photo/0003/2022-04-24/H5N2082C00AJ0003NOS.jpg","kind":"image","kindLabel":"图片"},{"label":"腾讯CDN","url":"https://game.gtimg.cn/images/nz/web202106/index/bc_part1.gif?0.3190485611376561","kind":"image","kindLabel":"图片"},{"label":"阿里CDN","url":"https://img.alicdn.com/imgextra/i1/O1CN01xA4P9S1JsW2WEg0e1_!!6000000001084-2-tps-2880-560.png","kind":"image","kindLabel":"图片"},{"label":"咪咕音乐","url":"https://d.musicapp.migu.cn/upload/fbpt_rsync_apps/local/signed/MobileMusic7220/MobileMusic7220_0140068.apk","kind":"package","kindLabel":"安装包"},{"label":"小米","url":"https://cnbj0.fds.api.xiaomi.com/b2c-data-mishop/9b9d95e1ece27d5ec75205e5fe719ba5.apk","kind":"package","kindLabel":"安装包"},{"label":"百度CDN [高速]","url":"https://issuecdn.baidupcs.com/issue/netdisk/apk/BaiduNetdiskSetup_wap_share.apk","kind":"package","kindLabel":"安装包"},{"label":"七牛云CDN [高速]","url":"https://kodo-toolbox.qiniu.com/kodo-browser-Linux-x64-v1.0.17.zip","kind":"archive","kindLabel":"压缩包"}]}]};
 </script>
 <script>
 (function () {
@@ -661,9 +686,24 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     siteByBadge[site.badge] = site;
     for (var sj = 0; sj < (site.sources || []).length; sj++) {
       var src = site.sources[sj];
-      ALL.push({ site: site.badge, siteName: site.name, label: src.label, url: src.url });
+      ALL.push({ site: site.badge, siteName: site.name, label: src.label, url: src.url, kind: src.kind || 'other', kindLabel: src.kindLabel || '其他' });
     }
   }
+
+  var KIND_ORDER = ['stream', 'video', 'image', 'audio', 'package', 'archive', 'script', 'style', 'font', 'other'];
+  var KIND_INDEX = {};
+  for (var ki = 0; ki < KIND_ORDER.length; ki++) KIND_INDEX[KIND_ORDER[ki]] = ki;
+  var SITE_INDEX = {};
+  for (var sn = 0; sn < sites.length; sn++) SITE_INDEX[sites[sn].badge] = sn;
+  ALL.sort(function (a, b) {
+    var ka = KIND_INDEX[a.kind], kb = KIND_INDEX[b.kind];
+    if (ka !== kb) return ka - kb;
+    var sa = SITE_INDEX[a.site], sb = SITE_INDEX[b.site];
+    if (sa !== sb) return sa - sb;
+    var byLabel = a.label.localeCompare(b.label, 'zh-CN');
+    if (byLabel !== 0) return byLabel;
+    return a.url.localeCompare(b.url);
+  });
 
   var CORS_HOSTS = ['speed.cloudflare.com', 'test.b-cdn.net', 'clouvider.net', 'datapacket.com', 'img.mcloud.139.com'];
   function isCors(url) {
@@ -673,15 +713,24 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return false;
   }
 
-  var DEFAULT_URL = 'https://speed.cloudflare.com/__down?bytes=10485760';
-  var defaultItem = null;
-  for (var di = 0; di < ALL.length; di++) {
-    if (ALL[di].url === DEFAULT_URL) { defaultItem = ALL[di]; break; }
+  function isRecommended(url) {
+    if (!isCors(url)) return false;
+    if (url.indexOf('speed.cloudflare.com') !== -1) {
+      var m = url.match(/bytes=(\d+)/);
+      if (m && Number(m[1]) > 8000000) return false;
+    }
+    return true;
   }
-  if (!defaultItem) defaultItem = ALL[0];
+
+  var CURATED = [
+    { site: '推荐', siteName: '内置推荐', label: 'Cloudflare Speed 5MB', url: 'https://speed.cloudflare.com/__down?bytes=5000000' }
+  ];
+  var DEFAULT_URL = CURATED[0].url;
+  var defaultItem = CURATED[0];
 
   var state = {
     current: defaultItem,
+    mode: 'stream',
     running: false,
     total: 0,
     startTime: 0,
@@ -693,6 +742,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     fails: 0,
     samples: [],
     controller: null,
+    xhrs: [],
+    elements: [],
+    estimated: false,
     uiTimer: null,
     chartTimer: null,
     limitBytes: 0,
@@ -701,7 +753,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     popoverOpen: false,
     libraryQuery: '',
     librarySite: '全部',
-    libraryLimit: 60
+    libraryKind: '全部',
+    libraryLimit: 60,
+    hydrated: false
   };
 
   var el = {
@@ -712,6 +766,10 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     sourceName: document.getElementById('sourceName'),
     sourceUrl: document.getElementById('sourceUrl'),
     corsTag: document.getElementById('corsTag'),
+    modeNote: document.getElementById('modeNote'),
+    modeBadge: document.getElementById('modeBadge'),
+    modeText: document.getElementById('modeText'),
+    saveHint: document.getElementById('saveHint'),
     customUrl: document.getElementById('customUrl'),
     totalValue: document.getElementById('totalValue'),
     totalUnit: document.getElementById('totalUnit'),
@@ -735,6 +793,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     canvas: document.getElementById('speedChart'),
     linkList: document.getElementById('linkList'),
     libraryChips: document.getElementById('libraryChips'),
+    kindChips: document.getElementById('kindChips'),
     librarySearch: document.getElementById('librarySearch'),
     libraryCount: document.getElementById('libraryCount'),
     moreRow: document.getElementById('moreRow'),
@@ -801,19 +860,112 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return ok;
   }
 
-  function setTheme(mode) {
-    document.documentElement.setAttribute('data-theme', mode);
-    try { localStorage.setItem('traffic.theme', mode); } catch (e) {}
-    updateThemeButtons();
-    drawChart();
+  var MODE_META = {
+    stream: { name: '流式读取', short: '流式', badge: '精确', text: 'ReadableStream 逐块读取，字节与速度精确，需要目标站允许 CORS。' },
+    xhr: { name: 'XHR 进度', short: 'XHR', badge: '兼容', text: '兼容性好，onprogress 直接统计已接收字节；单次最多 16MB 后自动断开重连，需要 CORS。' },
+    element: { name: '元素加载', short: '元素', badge: '估算', text: '用图片、视频或预加载标签产生流量，不要求 CORS；按资源类型估算（图片约 512KB/次、视频约 2MB/次），流量和速度不精确。' }
+  };
+
+  function setMode(mode, silent) {
+    if (!MODE_META[mode]) return;
+    if (state.running) stopTest();
+    state.mode = mode;
+    updateModeUI();
+    saveSettings();
+    if (!silent) toast('已切换为' + MODE_META[mode].name);
   }
 
-  function updateThemeButtons() {
-    var mode = document.documentElement.getAttribute('data-theme') || 'light';
-    var btns = document.querySelectorAll('[data-theme-btn]');
+  function updateModeUI() {
+    var meta = MODE_META[state.mode] || MODE_META.stream;
+    var btns = document.querySelectorAll('[data-mode]');
     for (var i = 0; i < btns.length; i++) {
-      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-theme-btn') === mode ? 'true' : 'false');
+      var on = btns[i].getAttribute('data-mode') === state.mode;
+      btns[i].classList.toggle('active', on);
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
     }
+    el.modeBadge.textContent = meta.name;
+    el.modeText.textContent = meta.text;
+    el.modeNote.classList.toggle('is-estimate', state.mode === 'element');
+    if (!state.running) updateMetrics();
+  }
+
+  var SETTINGS_KEY = 'traffic.consumer.settings.v1';
+
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || d.v !== 1) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function saveSettings() {
+    if (!state.hydrated) return;
+    try {
+      var src = state.current || {};
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        v: 1,
+        mode: state.mode,
+        source: { url: src.url, label: src.label, site: src.site, siteName: src.siteName },
+        customUrl: el.customUrl.value,
+        threads: state.threads,
+        limitMb: Number(el.limitInput.value) || 0
+      }));
+      if (el.saveHint) el.saveHint.textContent = '已保存到本机 · 再次打开会自动恢复';
+    } catch (e) {}
+  }
+
+  function restoreSettings() {
+    var d = loadSettings();
+    if (!d) return null;
+    if (MODE_META[d.mode]) state.mode = d.mode;
+    if (d.source && typeof d.source.url === 'string' && /^https?:\/\//i.test(d.source.url)) {
+      state.current = {
+        url: d.source.url,
+        label: d.source.label || '已保存的测速源',
+        site: d.source.site || '已保存',
+        siteName: d.source.siteName || '已保存'
+      };
+    }
+    var t = Number(d.threads);
+    if (isFinite(t)) {
+      t = Math.max(1, Math.min(32, Math.round(t)));
+      state.threads = t;
+      el.threadRange.value = t;
+    }
+    var lim = Number(d.limitMb);
+    if (isFinite(lim)) el.limitInput.value = Math.max(0, lim);
+    return d;
+  }
+
+  function resetSettings() {
+    if (state.running) stopTest();
+    state.hydrated = false;
+    try { localStorage.removeItem(SETTINGS_KEY); } catch (e) {}
+    state.current = CURATED[0];
+    state.mode = 'stream';
+    state.limitBytes = 0;
+    el.customUrl.value = '';
+    el.limitInput.value = '0';
+    setThreads(8);
+    updateSourceUI();
+    updateModeUI();
+    updateMetrics();
+    drawChart();
+    el.saveHint.textContent = '已恢复默认设置';
+    state.hydrated = true;
+    toast('已恢复默认设置');
+  }
+
+  function kindCount() {
+    var seen = {};
+    var n = 0;
+    for (var i = 0; i < ALL.length; i++) {
+      if (!seen[ALL[i].kind]) { seen[ALL[i].kind] = true; n++; }
+    }
+    return n;
   }
 
   function updateSourceUI() {
@@ -824,51 +976,38 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.customUrl.value = item.site === '自定义' ? item.url : '';
     document.getElementById('openCurrent').href = item.url;
     document.getElementById('copyCurrent').setAttribute('data-url', item.url);
-    document.getElementById('sourceCount').textContent = '共 ' + ALL.length + ' 条内置链接';
+    document.getElementById('sourceCount').textContent = '共 ' + ALL.length + ' 条 · ' + kindCount() + ' 类';
   }
 
   function renderSourceOptions(query) {
     var q = (query || '').toLowerCase();
     var html = '';
-    var shown = 0;
-    var recommended = [];
+    var recommended = CURATED.slice();
     var seen = {};
+    for (var ri = 0; ri < recommended.length; ri++) seen[recommended[ri].url] = true;
     for (var i = 0; i < ALL.length; i++) {
-      if (isCors(ALL[i].url) && !seen[ALL[i].url]) {
+      if (isRecommended(ALL[i].url) && !seen[ALL[i].url]) {
         seen[ALL[i].url] = true;
         recommended.push(ALL[i]);
       }
     }
     if (!q && recommended.length) {
       html += '<div class="option-group-title">推荐 · 支持浏览器跨域<span>' + recommended.length + ' 条</span></div>';
-      for (var r = 0; r < recommended.length; r++) {
-        if (shown >= 160) break;
-        html += sourceOptionHtml(recommended[r]);
-        shown++;
-      }
+      for (var r = 0; r < recommended.length; r++) html += sourceOptionHtml(recommended[r]);
     }
-    for (var s = 0; s < sites.length; s++) {
-      var site = sites[s];
+    for (var ko = 0; ko < KIND_ORDER.length; ko++) {
+      var kind = KIND_ORDER[ko];
       var group = [];
       for (var j = 0; j < ALL.length; j++) {
-        if (ALL[j].site !== site.badge) continue;
-        if (q && (ALL[j].label + ' ' + ALL[j].url + ' ' + ALL[j].siteName).toLowerCase().indexOf(q) === -1) continue;
+        if (ALL[j].kind !== kind) continue;
+        if (q && (ALL[j].label + ' ' + ALL[j].url + ' ' + ALL[j].siteName + ' ' + ALL[j].kindLabel).toLowerCase().indexOf(q) === -1) continue;
         group.push(ALL[j]);
       }
       if (!group.length) continue;
-      html += '<div class="option-group-title">' + escapeHtml(site.badge) + ' · ' + escapeHtml(site.name) + '<span>' + group.length + ' 条</span></div>';
-      for (var g = 0; g < group.length; g++) {
-        if (shown >= 160) break;
-        html += sourceOptionHtml(group[g]);
-        shown++;
-      }
-      if (shown >= 160) break;
+      html += '<div class="option-group-title">' + escapeHtml(group[0].kindLabel) + '<span>' + group.length + ' 条</span></div>';
+      for (var g = 0; g < group.length; g++) html += sourceOptionHtml(group[g]);
     }
-    if (!html) {
-      html = '<div class="options-empty">没有匹配的测速源</div>';
-    } else if (shown >= 160) {
-      html += '<div class="options-empty">已显示 160 条，继续输入关键词缩小范围；完整列表见下方链接库。</div>';
-    }
+    if (!html) html = '<div class="options-empty">没有匹配的测速源</div>';
     el.sourceOptions.innerHTML = html;
   }
 
@@ -888,6 +1027,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     if (state.running) stopTest();
     state.current = item;
     updateSourceUI();
+    saveSettings();
     closePopover();
     renderSourceOptions(el.sourceSearch.value);
     if (!silent) toast('已切换测速源');
@@ -914,30 +1054,76 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.threadRange.value = n;
     el.threadValue.textContent = n;
     el.threadValueText.textContent = n;
+    saveSettings();
   }
 
   function updateLimit() {
     var mb = Number(el.limitInput.value) || 0;
     state.limitBytes = mb > 0 ? mb * 1024 * 1024 : 0;
+    saveSettings();
   }
 
   function sleep(ms) {
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
   }
 
-  function worker() {
+  var XHR_REQUEST_CAP = 16 * 1024 * 1024;
+  var ELEMENT_ESTIMATE = { image: 512 * 1024, video: 2 * 1024 * 1024, audio: 1024 * 1024, script: 256 * 1024, style: 128 * 1024, other: 512 * 1024 };
+
+  function addBytes(n) {
+    if (!n || !state.running) return;
+    state.total += n;
+    if (state.limitBytes && state.total >= state.limitBytes) stopTest(true);
+  }
+
+  function addCacheBuster(url) {
+    var sep = url.indexOf('?') === -1 ? '?' : '&';
+    return url + sep + '_tc=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function resourceType(url) {
+    var lower = url.toLowerCase();
+    if (/\.(mp4|webm|ogg|mov|m4v)(\?|$)/.test(lower)) return 'video';
+    if (/\.(mp3|wav|aac|flac|m4a)(\?|$)/.test(lower)) return 'audio';
+    if (/\.(js|mjs)(\?|$)/.test(lower)) return 'script';
+    if (/\.css(\?|$)/.test(lower)) return 'style';
+    return 'image';
+  }
+
+  function hasTimingEntry(url) {
+    try { return performance.getEntriesByName(url).length > 0; } catch (e) { return false; }
+  }
+
+  function lastTransferSize(url) {
+    try {
+      var entries = performance.getEntriesByName(url);
+      if (!entries.length) return 0;
+      var entry = entries[entries.length - 1];
+      return entry.transferSize || entry.encodedBodySize || entry.decodedBodySize || 0;
+    } catch (e) { return 0; }
+  }
+
+  function startWorker() {
+    if (!state.running) return;
+    if (state.mode === 'xhr') xhrWorker();
+    else if (state.mode === 'element') elementWorker();
+    else streamWorker();
+  }
+
+  function streamWorker() {
     if (!state.running) return;
     var url = state.current.url;
     var ctrl = state.controller;
     state.requests++;
     var res;
     try {
-      res = fetch(url, {
+      var opts = {
         cache: 'no-store',
         mode: 'cors',
-        referrerPolicy: 'no-referrer',
-        signal: ctrl.signal
-      });
+        referrerPolicy: 'no-referrer'
+      };
+      if (ctrl) opts.signal = ctrl.signal;
+      res = fetch(url, opts);
     } catch (e) {
       handleWorkerError(e);
       return;
@@ -955,15 +1141,12 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
           }
           if (result.done) {
             try { reader.cancel(); } catch (e) {}
-            worker();
+            startWorker();
             return;
           }
           if (result.value && result.value.byteLength) {
-            state.total += result.value.byteLength;
-            if (state.limitBytes && state.total >= state.limitBytes) {
-              stopTest(true);
-              return;
-            }
+            addBytes(result.value.byteLength);
+            if (!state.running) return;
           }
           return pump();
         });
@@ -974,19 +1157,143 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     });
   }
 
+  function xhrWorker() {
+    if (!state.running) return;
+    state.requests++;
+    var url = addCacheBuster(state.current.url);
+    var xhr = new XMLHttpRequest();
+    var lastLoaded = 0;
+    var finished = false;
+    state.xhrs.push(xhr);
+
+    function cleanup() {
+      var idx = state.xhrs.indexOf(xhr);
+      if (idx >= 0) state.xhrs.splice(idx, 1);
+    }
+
+    function fail(err) {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (state.running) handleWorkerError(err || new Error('XHR 请求失败'));
+    }
+
+    xhr.open('GET', url, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.timeout = 30000;
+    xhr.onprogress = function (e) {
+      if (!state.running) return;
+      var loaded = e.loaded || 0;
+      if (loaded > lastLoaded) {
+        addBytes(loaded - lastLoaded);
+        lastLoaded = loaded;
+      }
+      if (loaded >= XHR_REQUEST_CAP) {
+        try { xhr.abort(); } catch (err) {}
+      }
+    };
+    xhr.onload = function () {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (!state.running) return;
+      var size = xhr.response ? xhr.response.byteLength : 0;
+      if (size > lastLoaded) addBytes(size - lastLoaded);
+      if (state.running) startWorker();
+    };
+    xhr.onerror = function () { fail(new Error('XHR 请求失败')); };
+    xhr.ontimeout = function () { fail(new Error('XHR 请求超时')); };
+    xhr.onabort = function () {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (state.running) startWorker();
+    };
+    try { xhr.send(); } catch (e) { fail(e); }
+  }
+
+  function elementWorker() {
+    if (!state.running) return;
+    state.requests++;
+    var type = resourceType(state.current.url);
+    var finalUrl = addCacheBuster(state.current.url);
+    var node;
+    var done = false;
+    var timer;
+
+    function cleanup() {
+      clearTimeout(timer);
+      if (node && node.parentNode) node.parentNode.removeChild(node);
+      var idx = state.elements.indexOf(node);
+      if (idx >= 0) state.elements.splice(idx, 1);
+    }
+
+    function finish() {
+      if (done || !state.running) { done = true; cleanup(); return; }
+      done = true;
+      if (!hasTimingEntry(finalUrl)) {
+        state.fails++;
+        cleanup();
+        if (!state.errorShown && state.total === 0 && state.fails >= Math.max(8, state.threads * 4)) {
+          state.errorShown = true;
+          toast('元素加载没有产生可统计请求，请换图片/视频源或切换下载方式');
+          setStatus('元素加载失败', 'error');
+          stopTest(false, true);
+          return;
+        }
+        if (state.running) setTimeout(elementWorker, 600);
+        return;
+      }
+      var actual = lastTransferSize(finalUrl);
+      var base = ELEMENT_ESTIMATE[type] || ELEMENT_ESTIMATE.other;
+      var size = actual > base ? actual : base;
+      state.estimated = true;
+      addBytes(size);
+      cleanup();
+      if (state.running) setTimeout(elementWorker, 40);
+    }
+
+    if (type === 'video' || type === 'audio') {
+      node = document.createElement(type);
+      node.muted = true;
+      node.preload = 'auto';
+      node.onloadeddata = node.onerror = finish;
+    } else if (type === 'script' || type === 'style') {
+      node = document.createElement('link');
+      node.rel = 'preload';
+      node.as = type === 'script' ? 'script' : 'style';
+      node.onload = node.onerror = finish;
+    } else {
+      node = new Image();
+      node.onload = node.onerror = finish;
+    }
+    node.style.display = 'none';
+    state.elements.push(node);
+    timer = setTimeout(finish, 15000);
+
+    if (node.tagName === 'LINK') {
+      node.href = finalUrl;
+      document.body.appendChild(node);
+    } else {
+      node.src = finalUrl;
+      document.body.appendChild(node);
+      if (node.load) node.load();
+    }
+  }
+
   function handleWorkerError(e) {
     if (!state.running) return;
     if (e && e.name === 'AbortError') return;
     state.fails++;
     if (!state.errorShown && state.total === 0 && state.fails >= Math.max(4, state.threads * 2)) {
       state.errorShown = true;
-      toast('当前源跨域或连接失败，请选择带 CORS 标记的推荐源');
+      toast('当前源跨域或连接失败，请切换下载方式或选择带 CORS 标记的源');
       setStatus('测速源连接失败', 'error');
       stopTest(false, true);
       return;
     }
     sleep(650).then(function () {
-      if (state.running) worker();
+      if (state.running) startWorker();
     });
   }
 
@@ -999,7 +1306,12 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var total = formatBytes(state.total, 2);
     el.totalValue.textContent = total.value;
     el.totalUnit.textContent = total.unit;
-    el.totalSub.textContent = state.limitBytes ? '目标 ' + formatBytes(state.limitBytes, 0).value + ' ' + formatBytes(state.limitBytes, 0).unit : (state.running ? '持续下载中' : (state.total ? '测试已停止' : '等待开始'));
+    var sub;
+    if (state.limitBytes) sub = '目标 ' + formatBytes(state.limitBytes, 0).value + ' ' + formatBytes(state.limitBytes, 0).unit;
+    else if (state.running) sub = state.mode === 'element' ? '估算流量 · 持续加载' : '持续下载中';
+    else if (state.total) sub = state.mode === 'element' ? '估算流量 · 已停止' : '测试已停止';
+    else sub = '等待开始';
+    el.totalSub.textContent = sub;
 
     var speed = formatBytes(state.speedBps, 2);
     el.speedValue.textContent = speed.value;
@@ -1145,30 +1457,46 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.fails = 0;
     state.samples = [];
     state.errorShown = false;
-    state.controller = new AbortController();
-    el.startButton.classList.add('is-running');
+    state.estimated = false;
+    state.xhrs = [];
+    state.elements = [];
+    state.controller = window.AbortController ? new AbortController() : null;
+    el.startButton.classList.add('is-running', 'is-launching');
+    setTimeout(function () { el.startButton.classList.remove('is-launching'); }, 320);
     el.startButton.setAttribute('aria-label', '停止测试');
-    setStatus('运行中 · ' + state.threads + ' 线程', 'running');
+    setStatus('运行中 · ' + MODE_META[state.mode].short + ' · ' + state.threads + ' 线程', 'running');
     updateMetrics();
     drawChart();
-    for (var i = 0; i < state.threads; i++) worker();
-    state.uiTimer = setInterval(tick, 250);
-    state.chartTimer = setInterval(sample, 500);
+    for (var i = 0; i < state.threads; i++) startWorker();
+    state.uiTimer = setInterval(tick, 1000);
+    state.chartTimer = setInterval(sample, 1000);
   }
 
   function stopTest(auto, silent) {
     if (!state.running) return;
     state.running = false;
+    state.lastTime = Date.now();
     if (state.controller) {
       try { state.controller.abort(); } catch (e) {}
       state.controller = null;
     }
+    for (var x = 0; x < state.xhrs.length; x++) {
+      try { state.xhrs[x].abort(); } catch (e) {}
+    }
+    state.xhrs = [];
+    for (var y = 0; y < state.elements.length; y++) {
+      var node = state.elements[y];
+      if (node && node.parentNode) node.parentNode.removeChild(node);
+    }
+    state.elements = [];
     clearInterval(state.uiTimer);
     clearInterval(state.chartTimer);
     state.uiTimer = null;
     state.chartTimer = null;
     state.speedBps = 0;
     el.startButton.classList.remove('is-running');
+    el.startButton.classList.add('is-stopping');
+    setTimeout(function () { el.startButton.classList.remove('is-stopping'); }, 240);
     el.startButton.setAttribute('aria-label', '开始测试');
     if (!silent) setStatus(auto ? '已达到目标流量' : '已停止', auto ? 'running' : '');
     updateMetrics();
@@ -1188,13 +1516,27 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.libraryChips.innerHTML = html;
   }
 
+  function renderKindChips() {
+    var counts = {};
+    for (var i = 0; i < ALL.length; i++) counts[ALL[i].kind] = (counts[ALL[i].kind] || 0) + 1;
+    var html = '<button type="button" class="chip' + (state.libraryKind === '全部' ? ' active' : '') + '" data-kind-filter="全部">全部类型</button>';
+    for (var k = 0; k < KIND_ORDER.length; k++) {
+      var kind = KIND_ORDER[k];
+      if (!counts[kind]) continue;
+      var label = ALL.filter(function (x) { return x.kind === kind; })[0].kindLabel;
+      html += '<button type="button" class="chip' + (state.libraryKind === kind ? ' active' : '') + '" data-kind-filter="' + escapeHtml(kind) + '" title="' + escapeHtml(label + ' · ' + counts[kind] + ' 条') + '">' + escapeHtml(label + ' ' + counts[kind]) + '</button>';
+    }
+    el.kindChips.innerHTML = html;
+  }
+
   function filteredLinks() {
     var q = state.libraryQuery.toLowerCase();
     var out = [];
     for (var i = 0; i < ALL.length; i++) {
       var item = ALL[i];
       if (state.librarySite !== '全部' && item.site !== state.librarySite) continue;
-      if (q && (item.label + ' ' + item.url + ' ' + item.siteName + ' ' + item.site).toLowerCase().indexOf(q) === -1) continue;
+      if (state.libraryKind !== '全部' && item.kind !== state.libraryKind) continue;
+      if (q && (item.label + ' ' + item.url + ' ' + item.siteName + ' ' + item.site + ' ' + item.kindLabel).toLowerCase().indexOf(q) === -1) continue;
       out.push(item);
     }
     return out;
@@ -1203,9 +1545,16 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   function renderLibrary() {
     var items = filteredLinks();
     var shown = items.slice(0, state.libraryLimit);
+    var counts = {};
+    for (var c = 0; c < items.length; c++) counts[items[c].kind] = (counts[items[c].kind] || 0) + 1;
     var html = '';
+    var lastKind = '';
     for (var i = 0; i < shown.length; i++) {
       var item = shown[i];
+      if (item.kind !== lastKind) {
+        html += '<div class="lib-group-title">' + escapeHtml(item.kindLabel) + '<span>' + counts[item.kind] + ' 条</span></div>';
+        lastKind = item.kind;
+      }
       html += '<div class="lib-row">' +
         '<span class="lib-badge">' + escapeHtml(item.site) + '</span>' +
         '<span class="lib-copy">' +
@@ -1218,7 +1567,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
         '</span>' +
       '</div>';
     }
-    if (!html) html = '<div class="empty">没有匹配的链接，换个关键词或来源站点试试。</div>';
+    if (!html) html = '<div class="empty">没有匹配的链接，换个关键词、类型或来源站点试试。</div>';
     el.linkList.innerHTML = html;
     el.libraryCount.textContent = items.length + ' 条';
     el.moreRow.hidden = items.length <= state.libraryLimit;
@@ -1232,7 +1581,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
         '<span class="site-badge">' + escapeHtml(s.badge) + '</span>' +
         '<span class="site-main">' +
           '<span class="site-name">' + escapeHtml(s.name) + '</span>' +
-          '<span class="site-meta">' + escapeHtml(s.impl) + ' · ' + escapeHtml(s.threads) + ' · ' + (s.sources || []).length + ' 条测速链接</span>' +
+          '<span class="site-meta">' + escapeHtml(s.impl) + ' · ' + escapeHtml(s.threads) + ' · ' + (s.sources || []).length + ' 条资源链接</span>' +
           '<a class="site-link" href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener">' + escapeHtml(s.host) + ' ↗</a>' +
         '</span>' +
         '<span class="site-actions">' +
@@ -1279,7 +1628,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   document.getElementById('copyCurrent').addEventListener('click', function () {
     var url = state.current && state.current.url;
     if (!url) return;
-    copyText(url).then(function (ok) { toast(ok ? '当前测速链接已复制' : '复制失败，请手动选择'); });
+    copyText(url).then(function (ok) { toast(ok ? '当前资源链接已复制' : '复制失败，请手动选择'); });
   });
 
   el.startButton.addEventListener('click', function () {
@@ -1289,10 +1638,21 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
 
   el.threadRange.addEventListener('input', function () { setThreads(el.threadRange.value); });
   el.limitInput.addEventListener('input', updateLimit);
+  el.customUrl.addEventListener('input', saveSettings);
+  document.getElementById('resetSettings').addEventListener('click', resetSettings);
 
   el.librarySearch.addEventListener('input', function () {
     state.libraryQuery = el.librarySearch.value.trim();
     state.libraryLimit = 60;
+    renderLibrary();
+  });
+
+  el.kindChips.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-kind-filter]');
+    if (!btn) return;
+    state.libraryKind = btn.getAttribute('data-kind-filter');
+    state.libraryLimit = 60;
+    renderKindChips();
     renderLibrary();
   });
 
@@ -1319,7 +1679,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     }
     var copyBtn = e.target.closest('[data-copy-url]');
     if (copyBtn) {
-      copyText(copyBtn.getAttribute('data-copy-url')).then(function (ok) { toast(ok ? '测速链接已复制' : '复制失败，请手动选择'); });
+      copyText(copyBtn.getAttribute('data-copy-url')).then(function (ok) { toast(ok ? '资源链接已复制' : '复制失败，请手动选择'); });
     }
   });
 
@@ -1341,10 +1701,10 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     });
   });
 
-  document.querySelector('.theme-switch').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-theme-btn]');
+  document.querySelector('.mode-switch').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-mode]');
     if (!btn) return;
-    setTheme(btn.getAttribute('data-theme-btn'));
+    setMode(btn.getAttribute('data-mode'));
   });
 
   el.sitesBody.addEventListener('click', function (e) {
@@ -1360,15 +1720,32 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
 
   window.addEventListener('resize', function () { drawChart(); });
 
-  updateThemeButtons();
-  setThreads(8);
+  var themeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function applySystemTheme() {
+    document.documentElement.setAttribute('data-theme', themeQuery && themeQuery.matches ? 'dark' : 'light');
+    drawChart();
+  }
+  if (themeQuery) {
+    if (themeQuery.addEventListener) themeQuery.addEventListener('change', applySystemTheme);
+    else if (themeQuery.addListener) themeQuery.addListener(applySystemTheme);
+  }
+
+  var restored = restoreSettings();
+  updateModeUI();
+  setThreads(state.threads);
   updateLimit();
   updateSourceUI();
+  if (restored && typeof restored.customUrl === 'string' && restored.customUrl) {
+    el.customUrl.value = restored.customUrl;
+  }
   renderSourceOptions('');
+  renderKindChips();
   renderLibraryChips();
   renderLibrary();
   renderSites();
   drawChart();
+  state.hydrated = true;
+  el.saveHint.textContent = restored ? '已恢复上次设置 · 更改会自动保存在本机' : '更改会自动保存在本机';
 })();
 </script>
 </body>
