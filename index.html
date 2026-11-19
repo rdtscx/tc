@@ -768,7 +768,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     if (!isCors(url)) return false;
     if (url.indexOf('speed.cloudflare.com') !== -1) {
       var m = url.match(/bytes=(\d+)/);
-      if (m && Number(m[1]) > 100000000) return false;
+      if (m && Number(m[1]) > 8000000) return false;
     }
     return true;
   }
@@ -1454,6 +1454,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   function stopTest(auto, silent) {
     if (!state.running) return;
     state.running = false;
+    state.lastTime = Date.now();
     if (state.controller) {
       try { state.controller.abort(); } catch (e) {}
       state.controller = null;
@@ -1606,7 +1607,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   document.getElementById('copyCurrent').addEventListener('click', function () {
     var url = state.current && state.current.url;
     if (!url) return;
-    copyText(url).then(function (ok) { toast(ok ? '当前测速链接已复制' : '复制失败，请手动选择'); });
+    copyText(url).then(function (ok) { toast(ok ? '当前资源链接已复制' : '复制失败，请手动选择'); });
   });
 
   el.startButton.addEventListener('click', function () {
@@ -1655,7 +1656,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     }
     var copyBtn = e.target.closest('[data-copy-url]');
     if (copyBtn) {
-      copyText(copyBtn.getAttribute('data-copy-url')).then(function (ok) { toast(ok ? '测速链接已复制' : '复制失败，请手动选择'); });
+      copyText(copyBtn.getAttribute('data-copy-url')).then(function (ok) { toast(ok ? '资源链接已复制' : '复制失败，请手动选择'); });
     }
   });
 
