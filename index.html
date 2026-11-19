@@ -397,19 +397,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .chart-wrap canvas { width: 100%; height: 100%; display: block; }
 .chart-legend { position: absolute; top: 8px; right: 12px; color: var(--muted-2); font-size: 9.5px; letter-spacing: .08em; }
 .chart-legend b { color: var(--cyan); font-weight: 700; }
-.compare-card { margin-top: 14px; padding: 20px 22px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; }
-.compare-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
-.compare-item { min-width: 0; padding: 13px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; transition: border-color .16s ease, background .16s ease; }
-.compare-item + .compare-item { margin-left: 10px; }
-.compare-item.is-active { background: var(--surface); border-color: rgba(13, 148, 136, .45); box-shadow: inset 0 0 0 1px rgba(13, 148, 136, .1); }
-.compare-top { display: flex; align-items: center; justify-content: space-between; }
-.compare-top h3 { margin: 0; color: var(--text); font-size: 13px; font-weight: 700; }
-.compare-tag { height: 18px; padding: 0 6px; color: var(--green); background: rgba(103, 194, 58, .09); border: 1px solid rgba(103, 194, 58, .28); border-radius: 5px; font-size: 9px; font-weight: 700; line-height: 16px; white-space: nowrap; }
-.compare-tag.estimate { color: var(--amber); background: rgba(230, 162, 60, .08); border-color: rgba(230, 162, 60, .28); }
-.compare-row { margin-top: 8px; color: var(--muted); font-size: 10.5px; line-height: 1.6; }
-.compare-row b { display: block; color: var(--blue); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; }
-.compare-row.cons b { color: var(--amber); }
-.compare-fit { margin-top: 8px; padding-top: 7px; color: var(--muted-2); border-top: 1px dashed var(--border); font-size: 10px; line-height: 1.55; }
 .library-card {
   margin-top: 14px;
   padding: 22px 24px 18px;
@@ -532,9 +519,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .lib-row { align-items: flex-start; }
   .mode-switch-label { display: none; }
   .mode-switch button { min-width: 38px; padding: 0 6px; font-size: 11px; }
-  .compare-card { padding: 16px 14px 14px; border-radius: 16px; }
-  .compare-grid { grid-template-columns: minmax(0, 1fr); }
-  .compare-item + .compare-item { margin: 8px 0 0 0; }
+
   .lib-actions-cell { flex-direction: column; margin-top: 2px; }
   .lib-actions-cell .btn { margin: 0 0 4px 0; }
   .sites-card summary { padding: 15px 16px; }
@@ -670,32 +655,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
     </div>
   </section>
 
-  <section class="compare-card" id="modeCompare">
-    <div class="section-head">
-      <h2>三种下载方式对比</h2>
-      <span>右上角可切换</span>
-    </div>
-    <div class="compare-grid">
-      <article class="compare-item is-active" data-mode-card="stream">
-        <div class="compare-top"><h3>流式读取</h3><span class="compare-tag">精确</span></div>
-        <div class="compare-row"><b>优点</b><span>ReadableStream 逐块读取，字节与速度精确；内存占用低；可边下边统计、及时停止。</span></div>
-        <div class="compare-row cons"><b>缺点</b><span>需要目标站允许 CORS；旧浏览器或部分 WebView 不支持 ReadableStream。</span></div>
-        <div class="compare-fit">适用：默认首选，支持 CORS 的测速源。</div>
-      </article>
-      <article class="compare-item" data-mode-card="xhr">
-        <div class="compare-top"><h3>XHR 进度</h3><span class="compare-tag">兼容</span></div>
-        <div class="compare-row"><b>优点</b><span>兼容性最好；onprogress 直接给出已接收字节，统计精确；可随时 abort。</span></div>
-        <div class="compare-row cons"><b>缺点</b><span>响应缓存在内存；单次最多 16MB 后自动断开重连；同样需要 CORS。</span></div>
-        <div class="compare-fit">适用：fetch 流式不可用、旧设备或旧 WebView。</div>
-      </article>
-      <article class="compare-item" data-mode-card="element">
-        <div class="compare-top"><h3>元素加载</h3><span class="compare-tag estimate">估算</span></div>
-        <div class="compare-row"><b>优点</b><span>不要求 CORS；用图片、视频或预加载标签产生真实下行流量，适合只能跨域引用的链接。</span></div>
-        <div class="compare-row cons"><b>缺点</b><span>读不到响应体，字节按资源类型估算；受缓存与解码影响，流量和速度不精确。</span></div>
-        <div class="compare-fit">适用：只求跑流量、不需要精确计量的场景。</div>
-      </article>
-    </div>
-  </section>
+  <section class="library-card">
     <div class="section-head">
       <h2>全部资源链接</h2>
       <span id="libraryCount">519 条</span>
@@ -946,10 +906,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.modeBadge.textContent = meta.name;
     el.modeText.textContent = meta.text;
     el.modeNote.classList.toggle('is-estimate', state.mode === 'element');
-    var cards = document.querySelectorAll('[data-mode-card]');
-    for (var c = 0; c < cards.length; c++) {
-      cards[c].classList.toggle('is-active', cards[c].getAttribute('data-mode-card') === state.mode);
-    }
     if (!state.running) updateMetrics();
   }
 
@@ -1769,12 +1725,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var btn = e.target.closest('[data-mode]');
     if (!btn) return;
     setMode(btn.getAttribute('data-mode'));
-  });
-
-  document.getElementById('modeCompare').addEventListener('click', function (e) {
-    var card = e.target.closest('[data-mode-card]');
-    if (!card) return;
-    setMode(card.getAttribute('data-mode-card'));
   });
 
   el.sitesBody.addEventListener('click', function (e) {
