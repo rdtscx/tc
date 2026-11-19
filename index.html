@@ -752,12 +752,11 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return true;
   }
 
-  var DEFAULT_URL = 'https://speed.cloudflare.com/__down?bytes=10485760';
-  var defaultItem = null;
-  for (var di = 0; di < ALL.length; di++) {
-    if (ALL[di].url === DEFAULT_URL) { defaultItem = ALL[di]; break; }
-  }
-  if (!defaultItem) defaultItem = ALL[0];
+  var CURATED = [
+    { site: '推荐', siteName: '内置推荐', label: 'Cloudflare Speed 5MB', url: 'https://speed.cloudflare.com/__down?bytes=5000000' }
+  ];
+  var DEFAULT_URL = CURATED[0].url;
+  var defaultItem = CURATED[0];
 
   var state = {
     current: defaultItem,
@@ -934,8 +933,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var q = (query || '').toLowerCase();
     var html = '';
     var shown = 0;
-    var recommended = [];
+    var recommended = CURATED.slice();
     var seen = {};
+    for (var ri = 0; ri < recommended.length; ri++) seen[recommended[ri].url] = true;
     for (var i = 0; i < ALL.length; i++) {
       if (isRecommended(ALL[i].url) && !seen[ALL[i].url]) {
         seen[ALL[i].url] = true;
