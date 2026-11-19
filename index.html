@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>流量消耗器 · 9 个站点与测速源导航</title>
-<meta name="description" content="收录导航页「流量消耗器」分类中的 9 个站点，整理各自实现方式、默认测试链接与全部内置测速源。">
+<title>流量消耗器 · 在线流量测试与 519 条测速源</title>
+<meta name="description" content="可直接使用的在线流量消耗器：选择测速源、设置线程，实时统计下载流量与速度；内置 9 个站点的 519 条公开测速链接，可复制引用。">
 <meta name="theme-color" content="#f0fdfa">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230d9488'/%3E%3Cpath d='M16 7v18M9 13l7-7 7 7M9 19l7 7 7-7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script>
@@ -95,13 +95,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   border-bottom: 1px solid transparent;
 }
 .app-header.is-scrolled { border-bottom-color: var(--border); }
-.brand {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  color: var(--brand);
-  text-decoration: none;
-}
+.brand { display: inline-flex; align-items: center; min-width: 0; color: var(--brand); text-decoration: none; }
 .brand-mark {
   position: relative;
   width: 38px;
@@ -128,51 +122,14 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   transform: rotate(-32deg);
 }
 .brand-copy { min-width: 0; display: block; }
-.brand-title {
-  display: block;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -.01em;
-  white-space: nowrap;
-}
-.brand-sub {
-  display: block;
-  margin-top: 1px;
-  color: var(--muted-2);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: .18em;
-  white-space: nowrap;
-}
+.brand-title { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; white-space: nowrap; }
+.brand-sub { display: block; margin-top: 1px; color: var(--muted-2); font-size: 9px; font-weight: 600; letter-spacing: .18em; white-space: nowrap; }
 .header-actions { display: flex; flex: 0 0 auto; align-items: center; }
-.theme-switch {
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  padding: 3px;
-  background: var(--page);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-}
+.theme-switch { height: 32px; display: inline-flex; align-items: center; padding: 3px; background: var(--page); border: 1px solid var(--border); border-radius: 9px; }
 [data-theme="dark"] .theme-switch { background: var(--surface-2); }
-.theme-switch button {
-  height: 24px;
-  min-width: 44px;
-  padding: 0 9px;
-  color: var(--muted);
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  font-size: 12px;
-  line-height: 24px;
-}
+.theme-switch button { height: 24px; min-width: 44px; padding: 0 9px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 12px; line-height: 24px; }
 .theme-switch button:hover { color: var(--blue); }
-.theme-switch button[aria-pressed="true"] {
-  color: var(--brand);
-  background: var(--surface);
-  box-shadow: 0 1px 3px rgba(35, 52, 74, .12);
-}
+.theme-switch button[aria-pressed="true"] { color: var(--brand); background: var(--surface); box-shadow: 0 1px 3px rgba(35, 52, 74, .12); }
 .repo-link {
   display: inline-flex;
   align-items: center;
@@ -189,422 +146,319 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .repo-link:hover { color: var(--blue); border-color: var(--blue); }
 [data-theme="dark"] .repo-link { background: rgba(45, 212, 191, .08); }
-.page {
-  width: min(856px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 22px 0 34px;
-}
-.hero {
+.page { width: min(856px, calc(100% - 40px)); margin: 0 auto; padding: 18px 0 34px; }
+.tool-card {
   position: relative;
-  padding: 28px 30px 26px;
+  padding: 26px 28px 22px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  overflow: hidden;
 }
-.hero::before {
+.tool-card::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0d9488, #09c2de 46%, transparent);
-}
-.eyebrow {
-  display: flex;
-  align-items: center;
-  color: var(--blue);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .2em;
-}
-.eyebrow::before {
-  content: "";
-  width: 22px;
+  left: 28px;
+  right: 28px;
   height: 2px;
-  margin-right: 8px;
-  background: var(--blue);
-  border-radius: 2px;
+  background: linear-gradient(90deg, #0d9488, #09c2de 50%, transparent);
+  border-radius: 0 0 2px 2px;
 }
-.hero h1 {
-  margin: 11px 0 0;
-  color: var(--brand);
-  font-size: 38px;
-  font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -.045em;
-}
-.hero h1 .dot { color: var(--cyan); }
-.hero p {
-  max-width: 650px;
-  margin: 11px 0 0;
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.72;
-}
-.hero p b { color: var(--text); font-weight: 600; }
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22px; }
-.stat {
-  position: relative;
-  min-width: 0;
-  padding: 13px 15px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-.stat + .stat { margin-left: 10px; }
-.stat b {
-  display: block;
-  color: var(--brand);
-  font-size: 25px;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -.03em;
-}
-.stat span {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted-2);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: .08em;
-  white-space: nowrap;
-}
-.stat i {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 7px;
-  height: 7px;
-  background: var(--cyan);
-  border-radius: 50%;
-  opacity: .75;
-}
-.toolbar {
-  position: sticky;
-  z-index: 30;
-  top: 67px;
-  padding: 14px 0 8px;
-  background: linear-gradient(180deg, var(--page) 0%, var(--page) 82%, rgba(240, 253, 250, 0) 100%);
-}
-[data-theme="dark"] .toolbar { background: linear-gradient(180deg, var(--page) 0%, var(--page) 82%, rgba(23, 33, 31, 0) 100%); }
-.search-row {
-  display: flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 6px 0 13px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: border-color .16s ease, box-shadow .16s ease;
-}
-.search-row:focus-within {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, .12);
-}
-.search-icon { flex: 0 0 auto; color: var(--muted-2); font-size: 15px; line-height: 1; }
-.search-row input {
-  flex: 1;
-  min-width: 0;
-  height: 40px;
-  padding: 0 9px;
-  color: var(--text);
-  background: transparent;
-  border: 0;
-  outline: 0;
-  font-size: 13.5px;
-}
-.search-row input::placeholder { color: var(--muted-2); }
-.clear-search {
-  flex: 0 0 auto;
-  height: 28px;
-  padding: 0 10px;
-  color: var(--muted-2);
-  background: transparent;
-  border: 0;
-  border-radius: 7px;
-  font-size: 12px;
-}
-.clear-search:hover { color: var(--blue); background: var(--surface-2); }
-.chips { display: flex; flex-wrap: wrap; margin-top: 9px; }
-.chip {
-  height: 29px;
-  margin: 0 6px 6px 0;
-  padding: 0 12px;
-  color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 27px;
-  transition: color .14s ease, border-color .14s ease, background .14s ease;
-}
-.chip:hover { color: var(--blue); border-color: rgba(13, 148, 136, .42); }
-.chip.active {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
-}
-.toolbar-actions { display: flex; flex-wrap: wrap; margin-top: 1px; }
-.toolbar-actions .btn { margin: 0 7px 7px 0; }
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
-  padding: 0 13px;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 32px;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color .14s ease, border-color .14s ease, background .14s ease, transform .12s ease;
-}
-.btn:hover { color: var(--blue); border-color: rgba(13, 148, 136, .44); background: var(--surface); }
-.btn:active { transform: scale(.985); }
-.btn-primary {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
-}
-.btn-primary:hover { color: #fff; background: var(--blue-strong); border-color: var(--blue-strong); }
-.btn-ghost { background: transparent; border-color: transparent; color: var(--blue); }
-.btn-ghost:hover { background: rgba(13, 148, 136, .07); border-color: transparent; }
-.btn-sm { height: 28px; padding: 0 9px; font-size: 11.5px; line-height: 26px; border-radius: 7px; }
-.site-list { margin-top: 4px; }
-.site-card {
-  position: relative;
-  margin-top: 12px;
-  padding: 21px 23px 19px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
-}
-.site-card:hover {
-  border-color: rgba(13, 148, 136, .4);
-  box-shadow: 0 8px 24px rgba(35, 52, 74, .07);
-  transform: translateY(-1px);
-}
-.site-card.is-main {
-  border-color: rgba(13, 148, 136, .48);
-  background: linear-gradient(180deg, rgba(13, 148, 136, .055), var(--surface) 34%);
-}
-[data-theme="dark"] .site-card.is-main { background: linear-gradient(180deg, rgba(45, 212, 191, .08), var(--surface) 34%); }
-.card-head { display: flex; align-items: flex-start; }
-.badge {
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  margin-right: 12px;
-  color: var(--blue);
-  background: rgba(13, 148, 136, .08);
-  border: 1px solid rgba(13, 148, 136, .2);
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -.02em;
-}
-.site-card.is-main .badge {
-  color: #fff;
-  background: linear-gradient(145deg, #0d9488, #09c2de);
-  border-color: transparent;
-  box-shadow: 0 4px 10px rgba(13, 148, 136, .25);
-}
-.head-copy { flex: 1; min-width: 0; padding-top: 1px; }
-.head-copy h2 {
-  margin: 0;
-  color: var(--text);
-  font-size: 17.5px;
-  font-weight: 700;
-  line-height: 1.36;
-  letter-spacing: -.01em;
-}
-.host {
-  display: inline-block;
-  margin-top: 2px;
-  color: var(--muted-2);
-  font-family: var(--mono);
-  font-size: 11.5px;
-  text-decoration: none;
-}
-.host:hover { color: var(--blue); }
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  max-width: 286px;
-  margin-left: 12px;
-}
-.tag {
-  height: 22px;
-  margin: 0 0 5px 5px;
-  padding: 0 8px;
-  color: var(--muted);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 10.5px;
-  line-height: 20px;
-  white-space: nowrap;
-}
-.desc {
-  margin: 13px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.72;
-}
-.impl-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-top: 10px;
-  padding: 9px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.impl-key {
-  margin-right: 10px;
-  color: var(--blue);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .12em;
-  white-space: nowrap;
-}
-.impl-text { min-width: 0; color: var(--text); font-size: 12.5px; font-weight: 600; }
-.impl-thread {
-  margin-left: auto;
-  padding-left: 12px;
-  color: var(--muted-2);
-  font-size: 11.5px;
-  white-space: nowrap;
-}
-.default-box {
-  margin-top: 10px;
-  padding: 10px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.box-title {
-  margin-bottom: 5px;
-  color: var(--muted-2);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .12em;
-}
-.link-row { display: flex; align-items: center; min-width: 0; }
-.link-url {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 11.5px;
-  text-decoration: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.link-url:hover { color: var(--blue); text-decoration: underline; }
-.link-actions { flex: 0 0 auto; display: flex; margin-left: 8px; }
-.link-actions .btn { margin-left: 5px; }
-.card-actions { display: flex; flex-wrap: wrap; margin-top: 12px; }
-.card-actions .btn { margin: 0 8px 0 0; }
-.sources {
-  margin-top: 6px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border);
-}
-.sources[hidden] { display: none; }
-.sources-meta {
+.eyebrow { display: flex; align-items: center; color: var(--blue); font-size: 10px; font-weight: 700; letter-spacing: .2em; }
+.eyebrow::before { content: ""; width: 20px; height: 2px; margin-right: 8px; background: var(--blue); border-radius: 2px; }
+.tool-head h1 { margin: 8px 0 0; color: var(--brand); font-size: 32px; font-weight: 800; line-height: 1.12; letter-spacing: -.04em; }
+.tool-head h1 .dot { color: var(--cyan); }
+.tool-head p { max-width: 660px; margin: 7px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+.control-label { display: flex; align-items: center; justify-content: space-between; height: 28px; margin-top: 14px; color: var(--text); font-size: 13px; font-weight: 600; }
+.control-hint { color: var(--muted-2); font-size: 11px; font-weight: 400; }
+.source-picker { position: relative; }
+.source-trigger {
+  width: 100%;
+  min-height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 7px;
-  color: var(--muted-2);
-  font-size: 11.5px;
-}
-.sources-meta b { color: var(--blue); font-weight: 600; }
-.source-list {
-  max-height: 300px;
-  padding: 3px 9px;
-  overflow: auto;
+  padding: 9px 13px;
+  color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  overscroll-behavior: contain;
+  border-radius: 12px;
+  text-align: left;
+  transition: border-color .16s ease, box-shadow .16s ease;
 }
-.source-item {
-  display: flex;
-  align-items: center;
-  padding: 7px 1px;
-  border-bottom: 1px solid var(--border);
-}
-.source-item:last-child { border-bottom: 0; }
-.source-label {
-  flex: 0 0 33%;
-  min-width: 0;
+.source-trigger:hover, .source-trigger[aria-expanded="true"] { border-color: var(--blue); }
+.source-trigger:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(13, 148, 136, .14); }
+.source-main { min-width: 0; flex: 1; display: block; }
+.source-name {
+  display: block;
   overflow: hidden;
-  padding-right: 10px;
   color: var(--text);
-  font-size: 11.5px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .source-url {
-  flex: 1;
-  min-width: 0;
+  display: block;
+  margin-top: 2px;
   overflow: hidden;
   color: var(--muted-2);
   font-family: var(--mono);
   font-size: 10.5px;
-  text-decoration: none;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.source-url:hover { color: var(--blue); }
-.source-actions { flex: 0 0 auto; display: flex; margin-left: 8px; }
-.source-actions .btn { margin-left: 4px; }
-.empty {
-  padding: 46px 20px;
-  color: var(--muted-2);
-  text-align: center;
+.source-side { flex: 0 0 auto; display: flex; align-items: center; margin-left: 10px; }
+.cors-tag {
+  height: 19px;
+  margin-right: 8px;
+  padding: 0 6px;
+  color: var(--green);
+  background: rgba(103, 194, 58, .09);
+  border: 1px solid rgba(103, 194, 58, .3);
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 17px;
+  letter-spacing: .04em;
+}
+.chevron { color: var(--muted-2); font-size: 16px; line-height: 1; transition: transform .18s ease; }
+.source-trigger[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+.source-popover {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
   background: var(--surface);
-  border: 1px dashed var(--border-strong);
-  border-radius: 16px;
-  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
-.empty[hidden] { display: none; }
-.site-footer {
-  width: min(856px, calc(100% - 40px));
-  margin: 18px auto 0;
-  padding-bottom: 24px;
+.source-popover[hidden] { display: none; }
+.popover-search { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid var(--border); }
+.popover-search input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  font-size: 12.5px;
+}
+.popover-search input:focus { border-color: var(--blue); }
+.source-options { max-height: min(360px, 52vh); overflow: auto; padding: 4px 8px 8px; overscroll-behavior: contain; }
+.option-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 2px 4px;
+  padding-top: 8px;
   color: var(--muted-2);
-  text-align: center;
-  font-size: 11.5px;
-  line-height: 1.8;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
 }
+.option-group-title:first-child { margin-top: 2px; padding-top: 0; border-top: 0; }
+.option-group-title span { font-weight: 400; letter-spacing: 0; }
+.option-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 7px 8px;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  text-align: left;
+}
+.option-item:hover, .option-item.is-selected { color: var(--blue); background: var(--surface-2); }
+.option-copy { min-width: 0; flex: 1; display: block; }
+.option-label { display: block; overflow: hidden; font-size: 12px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.option-url { display: block; margin-top: 1px; overflow: hidden; color: var(--muted-2); font-family: var(--mono); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.option-badge { flex: 0 0 auto; margin-left: 8px; color: var(--green); font-size: 9px; font-weight: 700; }
+.option-site { flex: 0 0 auto; margin-left: 8px; color: var(--muted-2); font-size: 9.5px; }
+.options-empty { padding: 18px 8px; color: var(--muted-2); text-align: center; font-size: 12px; }
+.custom-row { display: flex; align-items: center; margin-top: 8px; }
+.custom-row input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 11px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  outline: 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.custom-row input:focus { border-color: var(--blue); }
+.custom-row .btn { margin-left: 6px; }
+.settings-row { display: flex; align-items: flex-start; margin-top: 12px; }
+.thread-box { flex: 1; min-width: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
+.limit-box { flex: 0 0 208px; margin-left: 10px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
+.setting-head { display: flex; align-items: center; justify-content: space-between; color: var(--muted-2); font-size: 11px; font-weight: 600; }
+.setting-head b { color: var(--blue); font-size: 13px; font-weight: 700; }
+.range-line { display: flex; align-items: center; margin-top: 7px; }
+.range-line input[type="range"] { flex: 1; min-width: 0; height: 20px; margin: 0; accent-color: var(--blue); }
+.range-value { flex: 0 0 auto; width: 42px; margin-left: 10px; color: var(--text); text-align: right; font-family: var(--mono); font-size: 12px; }
+.limit-line { display: flex; align-items: center; margin-top: 7px; }
+.limit-line input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 9px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.limit-line input:focus { border-color: var(--blue); }
+.limit-line span { flex: 0 0 auto; margin-left: 6px; color: var(--muted-2); font-size: 11px; }
+.metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
+.metric-item {
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+.metric-item + .metric-item { margin-left: 10px; }
+.metric-label { color: var(--muted-2); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; }
+.metric-value { display: block; margin-top: 3px; color: var(--brand); font-size: 23px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; white-space: nowrap; }
+.metric-value small { margin-left: 3px; color: var(--muted-2); font-size: 10px; font-weight: 500; letter-spacing: 0; }
+.metric-sub { display: block; margin-top: 1px; color: var(--muted-2); font-size: 10px; white-space: nowrap; }
+.metric-speed .metric-value { color: var(--cyan); }
+.run-status { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; color: var(--muted-2); font-size: 11.5px; }
+.status-left { min-width: 0; display: flex; align-items: center; }
+.status-dot { width: 7px; height: 7px; flex: 0 0 7px; display: inline-block; margin-right: 6px; background: var(--muted-2); border-radius: 50%; }
+.status-dot.is-running { background: var(--green); box-shadow: 0 0 0 3px rgba(103, 194, 58, .14); }
+.status-dot.is-error { background: var(--red); }
+.status-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-right { flex: 0 0 auto; margin-left: 10px; font-family: var(--mono); }
+.action-zone { display: grid; place-items: center; padding: 18px 0 6px; }
+.start-button {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #fff;
+  background: #485bed linear-gradient(145deg, #485bed, #6576ff);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px #485bed, inset 0 2px 3px #6576ff;
+  transition: transform .16s ease, filter .16s ease, box-shadow .2s ease;
+}
+[data-theme="dark"] .start-button { box-shadow: 0 3px 14px rgba(72, 91, 237, .55), inset 0 2px 3px #6576ff; }
+.start-button:hover { filter: brightness(1.04); transform: scale(1.012); }
+.start-button:active { transform: scale(.98); }
+.start-icon { width: 42px; height: 42px; display: block; }
+.start-icon-stop { display: none; }
+.start-button.is-running { background: #f56c6c linear-gradient(145deg, #f56c6c, #ff8a8a); box-shadow: 0 3px 8px #f56c6c, inset 0 2px 3px #ff8a8a; }
+.start-button.is-running .start-icon-play { display: none; }
+.start-button.is-running .start-icon-stop { display: block; }
+.chart-wrap { position: relative; height: 170px; margin-top: 6px; padding: 8px 10px 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
+.chart-wrap canvas { width: 100%; height: 100%; display: block; }
+.chart-legend { position: absolute; top: 8px; right: 12px; color: var(--muted-2); font-size: 9.5px; letter-spacing: .08em; }
+.chart-legend b { color: var(--cyan); font-weight: 700; }
+.library-card {
+  margin-top: 14px;
+  padding: 22px 24px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; }
+.section-head h2 { margin: 0; color: var(--brand); font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.section-head span { color: var(--muted-2); font-size: 11.5px; }
+.section-desc { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.lib-toolbar { margin-top: 12px; }
+.lib-search { display: flex; align-items: center; height: 40px; padding: 0 6px 0 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+.lib-search:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(13, 148, 136, .1); }
+.lib-search input { flex: 1; min-width: 0; height: 36px; padding: 0 8px; color: var(--text); background: transparent; border: 0; outline: 0; font-size: 12.5px; }
+.lib-search input::placeholder { color: var(--muted-2); }
+.lib-actions { display: flex; flex-wrap: wrap; margin-top: 8px; }
+.lib-actions .btn { margin: 0 6px 6px 0; }
+.chips { display: flex; flex-wrap: wrap; margin-top: 4px; }
+.chip { height: 27px; margin: 0 5px 5px 0; padding: 0 10px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; font-size: 11px; line-height: 25px; }
+.chip:hover { color: var(--blue); border-color: rgba(13, 148, 136, .42); }
+.chip.active { color: #fff; background: var(--blue); border-color: var(--blue); }
+.link-list { margin-top: 4px; }
+.lib-row { display: flex; align-items: center; padding: 9px 1px; border-bottom: 1px solid var(--border); }
+.lib-row:last-child { border-bottom: 0; }
+.lib-badge { flex: 0 0 auto; min-width: 34px; height: 24px; display: grid; place-items: center; padding: 0 5px; margin-right: 9px; color: var(--blue); background: rgba(13, 148, 136, .07); border: 1px solid rgba(13, 148, 136, .18); border-radius: 6px; font-size: 10px; font-weight: 700; }
+.lib-copy { flex: 1; min-width: 0; display: block; }
+.lib-label { display: block; overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.lib-url { display: block; margin-top: 1px; overflow: hidden; color: var(--muted-2); font-family: var(--mono); font-size: 10px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.lib-url:hover { color: var(--blue); }
+.lib-actions-cell { flex: 0 0 auto; display: flex; margin-left: 8px; }
+.lib-actions-cell .btn { margin-left: 4px; }
+.more-row { display: flex; justify-content: center; margin-top: 12px; }
+.more-row .btn { min-width: 180px; }
+.sites-card { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+.sites-card summary { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; color: var(--brand); cursor: pointer; list-style: none; font-size: 15px; font-weight: 700; }
+.sites-card summary::-webkit-details-marker { display: none; }
+.sites-card summary small { color: var(--muted-2); font-size: 11px; font-weight: 400; }
+.sites-card summary::after { content: "⌄"; margin-left: 10px; color: var(--muted-2); font-size: 14px; }
+.sites-card[open] summary::after { transform: rotate(180deg); }
+.sites-body { padding: 0 24px 18px; }
+.site-row { display: flex; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--border); }
+.site-badge { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; margin-right: 10px; color: var(--blue); background: rgba(13, 148, 136, .08); border: 1px solid rgba(13, 148, 136, .18); border-radius: 10px; font-size: 11px; font-weight: 800; }
+.site-main { flex: 1; min-width: 0; }
+.site-name { display: block; color: var(--text); font-size: 13px; font-weight: 600; }
+.site-meta { display: block; margin-top: 2px; color: var(--muted-2); font-size: 10.5px; line-height: 1.55; }
+.site-link { display: inline-block; margin-top: 2px; color: var(--muted-2); font-family: var(--mono); font-size: 10px; text-decoration: none; }
+.site-link:hover { color: var(--blue); }
+.site-actions { flex: 0 0 auto; display: flex; margin-left: 10px; }
+.site-actions .btn { margin-left: 5px; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 11px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 30px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .14s ease, border-color .14s ease, background .14s ease, transform .12s ease;
+}
+.btn:hover { color: var(--blue); border-color: rgba(13, 148, 136, .44); }
+.btn:active { transform: scale(.985); }
+.btn-primary { color: #fff; background: var(--blue); border-color: var(--blue); }
+.btn-primary:hover { color: #fff; background: var(--blue-strong); border-color: var(--blue-strong); }
+.btn-sm { height: 26px; padding: 0 8px; font-size: 10.5px; line-height: 24px; border-radius: 6px; }
+.btn[disabled] { color: var(--muted-2); background: var(--surface-2); border-color: var(--border); cursor: not-allowed; opacity: .7; }
+.empty { padding: 40px 16px; color: var(--muted-2); text-align: center; font-size: 12.5px; }
+.site-footer { width: min(856px, calc(100% - 40px)); margin: 18px auto 0; padding-bottom: 24px; color: var(--muted-2); text-align: center; font-size: 11.5px; line-height: 1.8; }
 .site-footer a { color: var(--blue); text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
 .toast {
   position: fixed;
   z-index: 90;
   left: 50%;
-  bottom: 28px;
+  bottom: 26px;
   max-width: calc(100% - 40px);
   padding: 10px 16px;
   color: #fff;
-  background: rgba(22, 78, 99, .94);
+  background: rgba(22, 78, 99, .95);
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
   font-size: 12.5px;
@@ -620,24 +474,29 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .brand-title { font-size: 16px; }
   .brand-sub { font-size: 8px; }
   .repo-link { display: none; }
-  .page { width: calc(100% - 28px); padding-top: 14px; }
-  .hero { padding: 22px 20px; border-radius: 16px; }
-  .hero h1 { font-size: 31px; }
-  .hero p { font-size: 13px; }
-  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .stat + .stat { margin-left: 0; }
-  .stat:nth-child(even) { margin-left: 8px; }
-  .stat:nth-child(n+3) { margin-top: 8px; }
-  .toolbar { top: 67px; }
-  .site-card { padding: 18px 16px 16px; border-radius: 14px; }
-  .card-head { flex-wrap: wrap; }
-  .tags { flex: 1 0 100%; justify-content: flex-start; max-width: none; margin: 8px 0 0 0; }
-  .tag { margin: 0 5px 4px 0; }
-  .impl-thread { width: 100%; margin: 5px 0 0 0; padding-left: 0; }
-  .source-label { flex-basis: 40%; }
-  .source-url { font-size: 10px; }
-  .link-actions .btn span { display: none; }
+  .page { width: calc(100% - 28px); padding-top: 12px; }
+  .tool-card { padding: 20px 16px 18px; border-radius: 16px; }
+  .tool-card::before { left: 16px; right: 16px; }
+  .tool-head h1 { font-size: 28px; }
+  .settings-row { flex-direction: column; }
+  .limit-box { flex-basis: auto; width: 100%; margin: 8px 0 0 0; }
+  .metric-item { padding: 10px 11px; }
+  .metric-item + .metric-item { margin-left: 7px; }
+  .metric-value { font-size: 19px; }
+  .metric-value small { font-size: 9px; }
+  .metric-sub { font-size: 9px; }
+  .run-status { align-items: flex-start; flex-direction: column; }
+  .status-right { margin: 3px 0 0 0; }
+  .library-card { padding: 18px 15px 14px; border-radius: 16px; }
+  .lib-row { align-items: flex-start; }
+  .lib-actions-cell { flex-direction: column; margin-top: 2px; }
+  .lib-actions-cell .btn { margin: 0 0 4px 0; }
+  .sites-card summary { padding: 15px 16px; }
+  .sites-body { padding: 0 16px 14px; }
+  .site-row { flex-wrap: wrap; }
+  .site-actions { width: 100%; margin: 6px 0 0 46px; }
   .site-footer { width: calc(100% - 28px); }
+  .custom-row .btn { padding: 0 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
@@ -663,33 +522,121 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 </header>
 
 <main class="page">
-  <section class="hero">
-    <div class="eyebrow">TRAFFIC CONSUMER · 9 SITES</div>
-    <h1>流量消耗器<span class="dot">.</span></h1>
-    <p>收录导航页「流量消耗器」分类中的 <b>9 个站点</b>，逐个核对实现方式、默认测试链接与内置测速源。页面只做链接整理，下载与流量统计均在各站点本地完成。</p>
-    <div class="stats">
-      <div class="stat"><b>09</b><span>收录站点</span><i></i></div>
-      <div class="stat"><b id="statSources">0</b><span>内置测速链接</span><i></i></div>
-      <div class="stat"><b>03</b><span>种下载实现</span><i></i></div>
-      <div class="stat"><b>01</b><span>键复制全部</span><i></i></div>
+  <section class="tool-card">
+    <div class="tool-head">
+      <div class="eyebrow">NETWORK TRAFFIC TEST</div>
+      <h1>流量消耗器<span class="dot">.</span></h1>
+      <p>选择测速源、设置线程后开始，浏览器会持续下载并把真实接收字节统计到下方。所有请求在你当前设备本地完成，不经过本站服务器。</p>
+    </div>
+
+    <div class="control-label">
+      <span>测速源</span>
+      <span class="control-hint" id="sourceCount">已载入全部测速链接</span>
+    </div>
+    <div class="source-picker">
+      <button class="source-trigger" id="sourceTrigger" type="button" aria-expanded="false" aria-haspopup="listbox">
+        <span class="source-main">
+          <span class="source-name" id="sourceName">选择测速源</span>
+          <span class="source-url" id="sourceUrl">—</span>
+        </span>
+        <span class="source-side">
+          <span class="cors-tag" id="corsTag" hidden>CORS</span>
+          <span class="chevron" aria-hidden="true">⌄</span>
+        </span>
+      </button>
+      <div class="source-popover" id="sourcePopover" hidden>
+        <div class="popover-search">
+          <input id="sourceSearch" type="search" placeholder="搜索 519 条测速链接（名称 / 域名）" autocomplete="off" aria-label="搜索测速源">
+        </div>
+        <div class="source-options" id="sourceOptions" role="listbox" aria-label="测速源列表"></div>
+      </div>
+    </div>
+
+    <div class="custom-row">
+      <input id="customUrl" type="url" placeholder="或粘贴自定义直链（需支持 CORS）" autocomplete="off" spellcheck="false" aria-label="自定义测速链接">
+      <button class="btn" id="useCustom" type="button">使用</button>
+      <button class="btn" id="copyCurrent" type="button">复制</button>
+      <a class="btn" id="openCurrent" href="#" target="_blank" rel="noopener">打开</a>
+    </div>
+
+    <div class="settings-row">
+      <div class="thread-box">
+        <div class="setting-head"><span>运行线程</span><b id="threadValue">8</b></div>
+        <div class="range-line">
+          <input id="threadRange" type="range" min="1" max="32" step="1" value="8" aria-label="运行线程">
+          <span class="range-value" id="threadValueText">8</span>
+        </div>
+      </div>
+      <div class="limit-box">
+        <div class="setting-head"><span>目标流量</span><span>0 = 不限</span></div>
+        <div class="limit-line">
+          <input id="limitInput" type="number" min="0" step="10" value="0" inputmode="numeric" aria-label="目标流量 MB">
+          <span>MB</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric-item">
+        <span class="metric-label">已消耗流量</span>
+        <span class="metric-value"><span id="totalValue">0.00</span><small id="totalUnit">MB</small></span>
+        <span class="metric-sub" id="totalSub">等待开始</span>
+      </div>
+      <div class="metric-item metric-speed">
+        <span class="metric-label">当前速度</span>
+        <span class="metric-value"><span id="speedValue">0.00</span><small id="speedUnit">MB/s</small></span>
+        <span class="metric-sub" id="speedSub">≈ 0.00 Mbps</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">平均速度</span>
+        <span class="metric-value"><span id="avgValue">0.00</span><small id="avgUnit">MB/s</small></span>
+        <span class="metric-sub" id="avgSub">≈ 0.00 Mbps</span>
+      </div>
+    </div>
+
+    <div class="run-status">
+      <div class="status-left"><span class="status-dot" id="statusDot"></span><span class="status-text" id="statusText">等待启动</span></div>
+      <div class="status-right"><span id="runtime">00:00:00</span> · <span id="requests">0</span> 次请求 · <span id="fails">0</span> 失败</div>
+    </div>
+
+    <div class="action-zone">
+      <button class="start-button" id="startButton" type="button" aria-label="开始测试">
+        <svg class="start-icon start-icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+        <svg class="start-icon start-icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="speedChart" aria-label="实时速度曲线"></canvas>
+      <div class="chart-legend">实时速度 <b>MB/s</b></div>
     </div>
   </section>
 
-  <section class="toolbar" aria-label="筛选与操作">
-    <div class="search-row">
-      <span class="search-icon" aria-hidden="true">⌕</span>
-      <input id="searchInput" type="search" placeholder="搜索站点、域名或实现方式…" autocomplete="off" aria-label="搜索站点">
-      <button class="clear-search" id="clearSearch" type="button">清除</button>
+  <section class="library-card">
+    <div class="section-head">
+      <h2>全部测速链接</h2>
+      <span id="libraryCount">519 条</span>
     </div>
-    <div class="chips" id="chips"></div>
-    <div class="toolbar-actions">
-      <button class="btn btn-sm" type="button" id="copyAllSites">复制全部站点</button>
-      <button class="btn btn-sm" type="button" id="copyAllSources">复制全部测速源</button>
+    <p class="section-desc">整理自 9 个站点的公开页面。点击「使用」载入上方测试器，或复制链接到其他工具中自行引用。</p>
+    <div class="lib-toolbar">
+      <div class="lib-search">
+        <span style="color:var(--muted-2);font-size:14px;line-height:1">⌕</span>
+        <input id="librarySearch" type="search" placeholder="搜索名称、域名或来源站点…" autocomplete="off" aria-label="搜索测速链接">
+      </div>
+      <div class="chips" id="libraryChips"></div>
+      <div class="lib-actions">
+        <button class="btn btn-sm" id="copyFiltered" type="button">复制当前筛选结果</button>
+        <button class="btn btn-sm" id="copyAllLinks" type="button">复制全部 519 条</button>
+      </div>
     </div>
+    <div class="link-list" id="linkList"></div>
+    <div class="more-row" id="moreRow" hidden><button class="btn" id="loadMore" type="button">加载更多</button></div>
   </section>
 
-  <section class="site-list" id="siteList" aria-live="polite"></section>
-  <div class="empty" id="empty" hidden>没有匹配的站点，换个关键词或筛选条件试试。</div>
+  <details class="sites-card">
+    <summary><span>9 个站点入口与实现方式</span><small>来源整理</small></summary>
+    <div class="sites-body" id="sitesBody"></div>
+  </details>
 </main>
 
 <footer class="site-footer">
@@ -707,14 +654,93 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   'use strict';
 
   var sites = DATA.sites || [];
-  var listEl = document.getElementById('siteList');
-  var emptyEl = document.getElementById('empty');
-  var chipsEl = document.getElementById('chips');
-  var searchEl = document.getElementById('searchInput');
-  var toastEl = document.getElementById('toast');
-  var state = { query: '', filter: '全部', open: {} };
+  var ALL = [];
+  var siteByBadge = {};
+  for (var si = 0; si < sites.length; si++) {
+    var site = sites[si];
+    siteByBadge[site.badge] = site;
+    for (var sj = 0; sj < (site.sources || []).length; sj++) {
+      var src = site.sources[sj];
+      ALL.push({ site: site.badge, siteName: site.name, label: src.label, url: src.url });
+    }
+  }
 
-  var FILTERS = ['全部', '流式读取', 'axios 进度', '运营商定向', '全球测速', '流量上限'];
+  var CORS_HOSTS = ['speed.cloudflare.com', 'test.b-cdn.net', 'clouvider.net', 'datapacket.com', 'img.mcloud.139.com'];
+  function isCors(url) {
+    for (var i = 0; i < CORS_HOSTS.length; i++) {
+      if (url.indexOf(CORS_HOSTS[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  var DEFAULT_URL = 'https://speed.cloudflare.com/__down?bytes=10485760';
+  var defaultItem = null;
+  for (var di = 0; di < ALL.length; di++) {
+    if (ALL[di].url === DEFAULT_URL) { defaultItem = ALL[di]; break; }
+  }
+  if (!defaultItem) defaultItem = ALL[0];
+
+  var state = {
+    current: defaultItem,
+    running: false,
+    total: 0,
+    startTime: 0,
+    lastBytes: 0,
+    lastTime: 0,
+    speedBps: 0,
+    peakBps: 0,
+    requests: 0,
+    fails: 0,
+    samples: [],
+    controller: null,
+    uiTimer: null,
+    chartTimer: null,
+    limitBytes: 0,
+    threads: 8,
+    errorShown: false,
+    popoverOpen: false,
+    libraryQuery: '',
+    librarySite: '全部',
+    libraryLimit: 60
+  };
+
+  var el = {
+    sourceTrigger: document.getElementById('sourceTrigger'),
+    sourcePopover: document.getElementById('sourcePopover'),
+    sourceOptions: document.getElementById('sourceOptions'),
+    sourceSearch: document.getElementById('sourceSearch'),
+    sourceName: document.getElementById('sourceName'),
+    sourceUrl: document.getElementById('sourceUrl'),
+    corsTag: document.getElementById('corsTag'),
+    customUrl: document.getElementById('customUrl'),
+    totalValue: document.getElementById('totalValue'),
+    totalUnit: document.getElementById('totalUnit'),
+    totalSub: document.getElementById('totalSub'),
+    speedValue: document.getElementById('speedValue'),
+    speedUnit: document.getElementById('speedUnit'),
+    speedSub: document.getElementById('speedSub'),
+    avgValue: document.getElementById('avgValue'),
+    avgUnit: document.getElementById('avgUnit'),
+    avgSub: document.getElementById('avgSub'),
+    runtime: document.getElementById('runtime'),
+    requests: document.getElementById('requests'),
+    fails: document.getElementById('fails'),
+    statusText: document.getElementById('statusText'),
+    statusDot: document.getElementById('statusDot'),
+    startButton: document.getElementById('startButton'),
+    threadRange: document.getElementById('threadRange'),
+    threadValue: document.getElementById('threadValue'),
+    threadValueText: document.getElementById('threadValueText'),
+    limitInput: document.getElementById('limitInput'),
+    canvas: document.getElementById('speedChart'),
+    linkList: document.getElementById('linkList'),
+    libraryChips: document.getElementById('libraryChips'),
+    librarySearch: document.getElementById('librarySearch'),
+    libraryCount: document.getElementById('libraryCount'),
+    moreRow: document.getElementById('moreRow'),
+    toast: document.getElementById('toast'),
+    sitesBody: document.getElementById('sitesBody')
+  };
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -725,17 +751,32 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       .replace(/'/g, '&#39;');
   }
 
-  function totalSources() {
-    var n = 0;
-    for (var i = 0; i < sites.length; i++) n += (sites[i].sources || []).length;
-    return n;
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  function formatBytes(bytes, digits) {
+    if (!bytes || bytes < 0) bytes = 0;
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var v = bytes, i = 0;
+    while (v >= 1024 && i < units.length - 1) { v = v / 1024; i++; }
+    var d = digits == null ? (i === 0 ? 0 : 2) : digits;
+    return { value: v.toFixed(d), unit: units[i] };
+  }
+
+  function formatSpeed(bytesPerSec) {
+    var f = formatBytes(bytesPerSec, 2);
+    return f.value + ' ' + f.unit + '/s';
+  }
+
+  function formatClock(ms) {
+    var sec = Math.max(0, Math.floor(ms / 1000));
+    return pad2(Math.floor(sec / 3600)) + ':' + pad2(Math.floor((sec % 3600) / 60)) + ':' + pad2(sec % 60);
   }
 
   function toast(text) {
-    toastEl.textContent = text;
-    toastEl.classList.add('show');
+    el.toast.textContent = text;
+    el.toast.classList.add('show');
     clearTimeout(toast._t);
-    toast._t = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+    toast._t = setTimeout(function () { el.toast.classList.remove('show'); }, 1900);
   }
 
   function copyText(text) {
@@ -760,204 +801,544 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return ok;
   }
 
-  function matches(site) {
-    if (state.filter !== '全部' && (site.tags || []).indexOf(state.filter) === -1) return false;
-    if (!state.query) return true;
-    var q = state.query.toLowerCase();
-    var hay = [site.name, site.host, site.url, site.impl, site.desc, site.threads]
-      .concat(site.tags || [])
-      .concat((site.defaults || []).map(function (x) { return x.label + ' ' + x.url; }))
-      .join(' ').toLowerCase();
-    if (hay.indexOf(q) !== -1) return true;
-    var sources = site.sources || [];
-    for (var i = 0; i < sources.length; i++) {
-      if ((sources[i].label + ' ' + sources[i].url).toLowerCase().indexOf(q) !== -1) return true;
-    }
-    return false;
-  }
-
-  function renderChips() {
-    var html = '';
-    for (var i = 0; i < FILTERS.length; i++) {
-      var f = FILTERS[i];
-      html += '<button type="button" class="chip' + (state.filter === f ? ' active' : '') + '" data-filter="' + escapeHtml(f) + '">' + escapeHtml(f) + '</button>';
-    }
-    chipsEl.innerHTML = html;
-  }
-
-  function renderSources(site) {
-    var rows = '';
-    var list = site.sources || [];
-    for (var i = 0; i < list.length; i++) {
-      var item = list[i];
-      var url = escapeHtml(item.url);
-      rows += '<div class="source-item">' +
-        '<span class="source-label" title="' + escapeHtml(item.label) + '">' + escapeHtml(item.label) + '</span>' +
-        '<a class="source-url" href="' + url + '" target="_blank" rel="noopener" title="' + url + '">' + url + '</a>' +
-        '<span class="source-actions">' +
-          '<button type="button" class="btn btn-sm" data-action="copy" data-url="' + url + '">复制</button>' +
-          '<a class="btn btn-sm" href="' + url + '" target="_blank" rel="noopener">打开</a>' +
-        '</span>' +
-      '</div>';
-    }
-    return '<div class="sources" data-sources>' +
-      '<div class="sources-meta"><span>内置测速源 <b>' + list.length + '</b> 条</span><span>来自该站点公开页面</span></div>' +
-      '<div class="source-list">' + rows + '</div>' +
-    '</div>';
-  }
-
-  function renderCard(site, index) {
-    var tags = (site.tags || []).map(function (t) { return '<span class="tag">' + escapeHtml(t) + '</span>'; }).join('');
-    var defaults = site.defaults || [];
-    var defaultRow = '';
-    if (defaults.length) {
-      var d = defaults[0];
-      defaultRow = '<div class="default-box">' +
-        '<div class="box-title">默认测试链接</div>' +
-        '<div class="link-row">' +
-          '<a class="link-url" href="' + escapeHtml(d.url) + '" target="_blank" rel="noopener" title="' + escapeHtml(d.url) + '">' + escapeHtml(d.url) + '</a>' +
-          '<span class="link-actions">' +
-            '<button type="button" class="btn btn-sm" data-action="copy" data-url="' + escapeHtml(d.url) + '">复制</button>' +
-            '<a class="btn btn-sm" href="' + escapeHtml(d.url) + '" target="_blank" rel="noopener">打开</a>' +
-          '</span>' +
-        '</div>' +
-      '</div>';
-    }
-    var isOpen = !!state.open[site.badge];
-    return '<article class="site-card' + (site.badge === '主' ? ' is-main' : '') + '" data-index="' + index + '">' +
-      '<div class="card-head">' +
-        '<span class="badge">' + escapeHtml(site.badge) + '</span>' +
-        '<div class="head-copy">' +
-          '<h2>' + escapeHtml(site.name) + '</h2>' +
-          '<a class="host" href="' + escapeHtml(site.url) + '" target="_blank" rel="noopener">' + escapeHtml(site.host) + ' ↗</a>' +
-        '</div>' +
-        '<div class="tags">' + tags + '</div>' +
-      '</div>' +
-      '<p class="desc">' + escapeHtml(site.desc) + '</p>' +
-      '<div class="impl-row">' +
-        '<span class="impl-key">实现</span>' +
-        '<span class="impl-text">' + escapeHtml(site.impl) + '</span>' +
-        '<span class="impl-thread">' + escapeHtml(site.threads) + '</span>' +
-      '</div>' +
-      defaultRow +
-      '<div class="card-actions">' +
-        '<a class="btn btn-primary" href="' + escapeHtml(site.url) + '" target="_blank" rel="noopener">打开站点</a>' +
-        (defaults.length ? '<button type="button" class="btn" data-action="copy-default" data-index="' + index + '">复制默认链接</button>' : '') +
-        '<button type="button" class="btn" data-action="toggle-sources" data-badge="' + escapeHtml(site.badge) + '" data-index="' + index + '">' +
-          (isOpen ? '收起测速源' : '内置测速源 ' + (site.sources || []).length) +
-        '</button>' +
-        '<button type="button" class="btn" data-action="copy-site-sources" data-index="' + index + '">复制该站全部链接</button>' +
-      '</div>' +
-      '<div data-sources-host>' + (isOpen ? renderSources(site) : '') + '</div>' +
-    '</article>';
-  }
-
-  function render() {
-    var html = '';
-    var visible = 0;
-    for (var i = 0; i < sites.length; i++) {
-      if (!matches(sites[i])) continue;
-      html += renderCard(sites[i], i);
-      visible++;
-    }
-    listEl.innerHTML = html;
-    emptyEl.hidden = visible > 0;
-    renderChips();
-  }
-
-  function updateThemeButtons() {
-    var mode = document.documentElement.getAttribute('data-theme') || 'light';
-    var buttons = document.querySelectorAll('[data-theme-btn]');
-    for (var i = 0; i < buttons.length; i++) {
-      buttons[i].setAttribute('aria-pressed', buttons[i].getAttribute('data-theme-btn') === mode ? 'true' : 'false');
-    }
-  }
-
   function setTheme(mode) {
     document.documentElement.setAttribute('data-theme', mode);
     try { localStorage.setItem('traffic.theme', mode); } catch (e) {}
     updateThemeButtons();
+    drawChart();
   }
 
-  function sourcesText(sitesArr) {
-    var lines = [];
-    for (var i = 0; i < sitesArr.length; i++) {
-      var s = sitesArr[i];
-      var list = s.sources || [];
-      for (var j = 0; j < list.length; j++) lines.push(list[j].url);
+  function updateThemeButtons() {
+    var mode = document.documentElement.getAttribute('data-theme') || 'light';
+    var btns = document.querySelectorAll('[data-theme-btn]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-theme-btn') === mode ? 'true' : 'false');
     }
-    return lines.join('\n');
   }
 
-  document.getElementById('statSources').textContent = totalSources();
-  updateThemeButtons();
-  render();
+  function updateSourceUI() {
+    var item = state.current;
+    el.sourceName.textContent = item.label || '自定义链接';
+    el.sourceUrl.textContent = item.url;
+    el.corsTag.hidden = !isCors(item.url);
+    el.customUrl.value = item.site === '自定义' ? item.url : '';
+    document.getElementById('openCurrent').href = item.url;
+    document.getElementById('copyCurrent').setAttribute('data-url', item.url);
+    document.getElementById('sourceCount').textContent = '共 ' + ALL.length + ' 条内置链接';
+  }
 
-  chipsEl.addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-filter]');
-    if (!btn) return;
-    state.filter = btn.getAttribute('data-filter');
-    render();
-  });
-
-  searchEl.addEventListener('input', function () {
-    state.query = searchEl.value.trim();
-    render();
-  });
-
-  document.getElementById('clearSearch').addEventListener('click', function () {
-    searchEl.value = '';
-    state.query = '';
-    render();
-    searchEl.focus();
-  });
-
-  listEl.addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    var action = btn.getAttribute('data-action');
-    if (action === 'copy') {
-      var url = btn.getAttribute('data-url') || '';
-      copyText(url).then(function (ok) { toast(ok ? '链接已复制' : '复制失败，请手动选择'); });
-      return;
-    }
-    if (action === 'copy-default') {
-      var s1 = sites[Number(btn.getAttribute('data-index'))];
-      var d = s1.defaults && s1.defaults[0];
-      if (!d) return;
-      copyText(d.url).then(function (ok) { toast(ok ? '默认测试链接已复制' : '复制失败，请手动选择'); });
-      return;
-    }
-    if (action === 'copy-site-sources') {
-      var s2 = sites[Number(btn.getAttribute('data-index'))];
-      copyText(sourcesText([s2])).then(function (ok) { toast(ok ? '已复制 ' + (s2.sources || []).length + ' 条测速链接' : '复制失败，请手动选择'); });
-      return;
-    }
-    if (action === 'toggle-sources') {
-      var badge = btn.getAttribute('data-badge');
-      var index = Number(btn.getAttribute('data-index'));
-      var card = btn.closest('.site-card');
-      var host = card.querySelector('[data-sources-host]');
-      var opened = !!state.open[badge];
-      if (opened) {
-        state.open[badge] = false;
-        host.innerHTML = '';
-        btn.textContent = '内置测速源 ' + (sites[index].sources || []).length;
-      } else {
-        state.open[badge] = true;
-        host.innerHTML = renderSources(sites[index]);
-        btn.textContent = '收起测速源';
+  function renderSourceOptions(query) {
+    var q = (query || '').toLowerCase();
+    var html = '';
+    var shown = 0;
+    var recommended = [];
+    var seen = {};
+    for (var i = 0; i < ALL.length; i++) {
+      if (isCors(ALL[i].url) && !seen[ALL[i].url]) {
+        seen[ALL[i].url] = true;
+        recommended.push(ALL[i]);
       }
     }
+    if (!q && recommended.length) {
+      html += '<div class="option-group-title">推荐 · 支持浏览器跨域<span>' + recommended.length + ' 条</span></div>';
+      for (var r = 0; r < recommended.length; r++) {
+        if (shown >= 160) break;
+        html += sourceOptionHtml(recommended[r]);
+        shown++;
+      }
+    }
+    for (var s = 0; s < sites.length; s++) {
+      var site = sites[s];
+      var group = [];
+      for (var j = 0; j < ALL.length; j++) {
+        if (ALL[j].site !== site.badge) continue;
+        if (q && (ALL[j].label + ' ' + ALL[j].url + ' ' + ALL[j].siteName).toLowerCase().indexOf(q) === -1) continue;
+        group.push(ALL[j]);
+      }
+      if (!group.length) continue;
+      html += '<div class="option-group-title">' + escapeHtml(site.badge) + ' · ' + escapeHtml(site.name) + '<span>' + group.length + ' 条</span></div>';
+      for (var g = 0; g < group.length; g++) {
+        if (shown >= 160) break;
+        html += sourceOptionHtml(group[g]);
+        shown++;
+      }
+      if (shown >= 160) break;
+    }
+    if (!html) {
+      html = '<div class="options-empty">没有匹配的测速源</div>';
+    } else if (shown >= 160) {
+      html += '<div class="options-empty">已显示 160 条，继续输入关键词缩小范围；完整列表见下方链接库。</div>';
+    }
+    el.sourceOptions.innerHTML = html;
+  }
+
+  function sourceOptionHtml(item) {
+    var selected = state.current && state.current.url === item.url ? ' is-selected' : '';
+    return '<button type="button" class="option-item' + selected + '" role="option" data-url="' + escapeHtml(item.url) + '" data-label="' + escapeHtml(item.label) + '" data-site="' + escapeHtml(item.site) + '">' +
+      '<span class="option-copy">' +
+        '<span class="option-label">' + escapeHtml(item.label) + '</span>' +
+        '<span class="option-url">' + escapeHtml(item.url) + '</span>' +
+      '</span>' +
+      (isCors(item.url) ? '<span class="option-badge">CORS</span>' : '') +
+      '<span class="option-site">' + escapeHtml(item.site) + '</span>' +
+    '</button>';
+  }
+
+  function selectSource(item, silent) {
+    if (state.running) stopTest();
+    state.current = item;
+    updateSourceUI();
+    closePopover();
+    renderSourceOptions(el.sourceSearch.value);
+    if (!silent) toast('已切换测速源');
+  }
+
+  function openPopover() {
+    state.popoverOpen = true;
+    el.sourcePopover.hidden = false;
+    el.sourceTrigger.setAttribute('aria-expanded', 'true');
+    el.sourceSearch.value = '';
+    renderSourceOptions('');
+    setTimeout(function () { el.sourceSearch.focus(); }, 30);
+  }
+
+  function closePopover() {
+    state.popoverOpen = false;
+    el.sourcePopover.hidden = true;
+    el.sourceTrigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function setThreads(v) {
+    var n = Math.max(1, Math.min(32, Math.round(Number(v) || 1)));
+    state.threads = n;
+    el.threadRange.value = n;
+    el.threadValue.textContent = n;
+    el.threadValueText.textContent = n;
+  }
+
+  function updateLimit() {
+    var mb = Number(el.limitInput.value) || 0;
+    state.limitBytes = mb > 0 ? mb * 1024 * 1024 : 0;
+  }
+
+  function sleep(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  function worker() {
+    if (!state.running) return;
+    var url = state.current.url;
+    var ctrl = state.controller;
+    state.requests++;
+    var res;
+    try {
+      res = fetch(url, {
+        cache: 'no-store',
+        mode: 'cors',
+        referrerPolicy: 'no-referrer',
+        signal: ctrl.signal
+      });
+    } catch (e) {
+      handleWorkerError(e);
+      return;
+    }
+    res.then(function (response) {
+      if (!state.running) return;
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      if (!response.body || !response.body.getReader) throw new Error('响应不支持流式读取');
+      var reader = response.body.getReader();
+      function pump() {
+        return reader.read().then(function (result) {
+          if (!state.running) {
+            try { reader.cancel(); } catch (e) {}
+            return;
+          }
+          if (result.done) {
+            try { reader.cancel(); } catch (e) {}
+            worker();
+            return;
+          }
+          if (result.value && result.value.byteLength) {
+            state.total += result.value.byteLength;
+            if (state.limitBytes && state.total >= state.limitBytes) {
+              stopTest(true);
+              return;
+            }
+          }
+          return pump();
+        });
+      }
+      return pump();
+    }).catch(function (e) {
+      handleWorkerError(e);
+    });
+  }
+
+  function handleWorkerError(e) {
+    if (!state.running) return;
+    if (e && e.name === 'AbortError') return;
+    state.fails++;
+    if (!state.errorShown && state.total === 0 && state.fails >= Math.max(4, state.threads * 2)) {
+      state.errorShown = true;
+      toast('当前源跨域或连接失败，请选择带 CORS 标记的推荐源');
+      setStatus('测速源连接失败', 'error');
+      stopTest(false, true);
+      return;
+    }
+    sleep(650).then(function () {
+      if (state.running) worker();
+    });
+  }
+
+  function setStatus(text, kind) {
+    el.statusText.textContent = text;
+    el.statusDot.className = 'status-dot' + (kind ? ' is-' + kind : '');
+  }
+
+  function updateMetrics() {
+    var total = formatBytes(state.total, 2);
+    el.totalValue.textContent = total.value;
+    el.totalUnit.textContent = total.unit;
+    el.totalSub.textContent = state.limitBytes ? '目标 ' + formatBytes(state.limitBytes, 0).value + ' ' + formatBytes(state.limitBytes, 0).unit : (state.running ? '持续下载中' : (state.total ? '测试已停止' : '等待开始'));
+
+    var speed = formatBytes(state.speedBps, 2);
+    el.speedValue.textContent = speed.value;
+    el.speedUnit.textContent = speed.unit + '/s';
+    el.speedSub.textContent = '≈ ' + (state.speedBps * 8 / 1000000).toFixed(2) + ' Mbps';
+
+    var elapsed = state.running ? Date.now() - state.startTime : (state.startTime ? state.lastTime - state.startTime : 0);
+    var avg = elapsed > 0 ? state.total / (elapsed / 1000) : 0;
+    var avgF = formatBytes(avg, 2);
+    el.avgValue.textContent = avgF.value;
+    el.avgUnit.textContent = avgF.unit + '/s';
+    el.avgSub.textContent = '≈ ' + (avg * 8 / 1000000).toFixed(2) + ' Mbps';
+
+    el.runtime.textContent = formatClock(elapsed);
+    el.requests.textContent = state.requests;
+    el.fails.textContent = state.fails;
+  }
+
+  function tick() {
+    if (!state.running) return;
+    var now = Date.now();
+    var dt = (now - state.lastTime) / 1000;
+    if (dt > 0.05) {
+      var delta = state.total - state.lastBytes;
+      state.speedBps = delta / dt;
+      if (state.speedBps > state.peakBps) state.peakBps = state.speedBps;
+      state.lastBytes = state.total;
+      state.lastTime = now;
+    }
+    updateMetrics();
+  }
+
+  function sample() {
+    if (!state.running) return;
+    state.samples.push(state.speedBps / 1048576);
+    if (state.samples.length > 120) state.samples.shift();
+    drawChart();
+  }
+
+  function drawChart() {
+    var canvas = el.canvas;
+    if (!canvas) return;
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    var w = Math.max(10, rect.width);
+    var h = Math.max(10, rect.height);
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+    }
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    var styles = getComputedStyle(document.documentElement);
+    var border = styles.getPropertyValue('--border').trim() || '#dcdfe6';
+    var muted = styles.getPropertyValue('--muted-2').trim() || '#909399';
+    var cyan = styles.getPropertyValue('--cyan').trim() || '#09c2de';
+
+    var padL = 34, padR = 8, padT = 12, padB = 16;
+    var chartW = Math.max(10, w - padL - padR);
+    var chartH = Math.max(10, h - padT - padB);
+    var samples = state.samples;
+    var max = 1;
+    for (var i = 0; i < samples.length; i++) if (samples[i] > max) max = samples[i];
+    max = max * 1.15;
+
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.font = '9px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillStyle = muted;
+    for (var g = 0; g <= 4; g++) {
+      var y = padT + chartH * g / 4;
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + chartW, y);
+      ctx.stroke();
+      var val = max * (1 - g / 4);
+      ctx.fillText(val.toFixed(val >= 10 ? 0 : 1), 2, y + 3);
+    }
+
+    if (!samples.length) {
+      ctx.fillStyle = muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(state.running ? '正在采集速度…' : '开始测试后显示实时速度曲线', padL + chartW / 2, padT + chartH / 2);
+      ctx.textAlign = 'start';
+      return;
+    }
+
+    var step = samples.length > 1 ? chartW / (samples.length - 1) : chartW;
+    var grad = ctx.createLinearGradient(0, padT, 0, padT + chartH);
+    grad.addColorStop(0, 'rgba(9, 194, 222, .28)');
+    grad.addColorStop(1, 'rgba(9, 194, 222, 0)');
+
+    ctx.beginPath();
+    ctx.moveTo(padL, padT + chartH);
+    for (var p = 0; p < samples.length; p++) {
+      var px = padL + (samples.length === 1 ? 0 : p * step);
+      var py = padT + chartH - (samples[p] / max) * chartH;
+      ctx.lineTo(px, py);
+    }
+    var lastX = padL + (samples.length === 1 ? 0 : (samples.length - 1) * step);
+    ctx.lineTo(lastX, padT + chartH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    for (var q = 0; q < samples.length; q++) {
+      var qx = padL + (samples.length === 1 ? 0 : q * step);
+      var qy = padT + chartH - (samples[q] / max) * chartH;
+      if (q === 0) ctx.moveTo(qx, qy);
+      else ctx.lineTo(qx, qy);
+    }
+    ctx.strokeStyle = cyan;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  function startTest() {
+    if (state.running) return;
+    var url = state.current && state.current.url;
+    if (!url || !/^https?:\/\//i.test(url)) {
+      toast('请选择一个有效的测速源');
+      return;
+    }
+    if (url.indexOf('http://') === 0) {
+      toast('该链接为 http，https 页面无法直接请求，请换用 https 链接');
+      return;
+    }
+    updateLimit();
+    state.running = true;
+    state.total = 0;
+    state.lastBytes = 0;
+    state.lastTime = Date.now();
+    state.startTime = Date.now();
+    state.speedBps = 0;
+    state.peakBps = 0;
+    state.requests = 0;
+    state.fails = 0;
+    state.samples = [];
+    state.errorShown = false;
+    state.controller = new AbortController();
+    el.startButton.classList.add('is-running');
+    el.startButton.setAttribute('aria-label', '停止测试');
+    setStatus('运行中 · ' + state.threads + ' 线程', 'running');
+    updateMetrics();
+    drawChart();
+    for (var i = 0; i < state.threads; i++) worker();
+    state.uiTimer = setInterval(tick, 250);
+    state.chartTimer = setInterval(sample, 500);
+  }
+
+  function stopTest(auto, silent) {
+    if (!state.running) return;
+    state.running = false;
+    if (state.controller) {
+      try { state.controller.abort(); } catch (e) {}
+      state.controller = null;
+    }
+    clearInterval(state.uiTimer);
+    clearInterval(state.chartTimer);
+    state.uiTimer = null;
+    state.chartTimer = null;
+    state.speedBps = 0;
+    el.startButton.classList.remove('is-running');
+    el.startButton.setAttribute('aria-label', '开始测试');
+    if (!silent) setStatus(auto ? '已达到目标流量' : '已停止', auto ? 'running' : '');
+    updateMetrics();
+    drawChart();
+    if (auto) toast('已达到目标流量，测试已自动停止');
+  }
+
+  function renderLibraryChips() {
+    var groups = ['全部', '主'];
+    for (var i = 0; i < sites.length; i++) {
+      if (sites[i].badge !== '主') groups.push(sites[i].badge);
+    }
+    var html = '';
+    for (var g = 0; g < groups.length; g++) {
+      html += '<button type="button" class="chip' + (state.librarySite === groups[g] ? ' active' : '') + '" data-site-filter="' + escapeHtml(groups[g]) + '">' + escapeHtml(groups[g]) + '</button>';
+    }
+    el.libraryChips.innerHTML = html;
+  }
+
+  function filteredLinks() {
+    var q = state.libraryQuery.toLowerCase();
+    var out = [];
+    for (var i = 0; i < ALL.length; i++) {
+      var item = ALL[i];
+      if (state.librarySite !== '全部' && item.site !== state.librarySite) continue;
+      if (q && (item.label + ' ' + item.url + ' ' + item.siteName + ' ' + item.site).toLowerCase().indexOf(q) === -1) continue;
+      out.push(item);
+    }
+    return out;
+  }
+
+  function renderLibrary() {
+    var items = filteredLinks();
+    var shown = items.slice(0, state.libraryLimit);
+    var html = '';
+    for (var i = 0; i < shown.length; i++) {
+      var item = shown[i];
+      html += '<div class="lib-row">' +
+        '<span class="lib-badge">' + escapeHtml(item.site) + '</span>' +
+        '<span class="lib-copy">' +
+          '<span class="lib-label" title="' + escapeHtml(item.label) + '">' + escapeHtml(item.label) + '</span>' +
+          '<a class="lib-url" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" title="' + escapeHtml(item.url) + '">' + escapeHtml(item.url) + '</a>' +
+        '</span>' +
+        '<span class="lib-actions-cell">' +
+          '<button type="button" class="btn btn-sm" data-use-url="' + escapeHtml(item.url) + '" data-use-label="' + escapeHtml(item.label) + '" data-use-site="' + escapeHtml(item.site) + '">使用</button>' +
+          '<button type="button" class="btn btn-sm" data-copy-url="' + escapeHtml(item.url) + '">复制</button>' +
+        '</span>' +
+      '</div>';
+    }
+    if (!html) html = '<div class="empty">没有匹配的链接，换个关键词或来源站点试试。</div>';
+    el.linkList.innerHTML = html;
+    el.libraryCount.textContent = items.length + ' 条';
+    el.moreRow.hidden = items.length <= state.libraryLimit;
+  }
+
+  function renderSites() {
+    var html = '';
+    for (var i = 0; i < sites.length; i++) {
+      var s = sites[i];
+      html += '<div class="site-row">' +
+        '<span class="site-badge">' + escapeHtml(s.badge) + '</span>' +
+        '<span class="site-main">' +
+          '<span class="site-name">' + escapeHtml(s.name) + '</span>' +
+          '<span class="site-meta">' + escapeHtml(s.impl) + ' · ' + escapeHtml(s.threads) + ' · ' + (s.sources || []).length + ' 条测速链接</span>' +
+          '<a class="site-link" href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener">' + escapeHtml(s.host) + ' ↗</a>' +
+        '</span>' +
+        '<span class="site-actions">' +
+          '<a class="btn btn-sm btn-primary" href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener">打开</a>' +
+          '<button type="button" class="btn btn-sm" data-copy-site="' + i + '">复制链接</button>' +
+        '</span>' +
+      '</div>';
+    }
+    el.sitesBody.innerHTML = html;
+  }
+
+  el.sourceTrigger.addEventListener('click', function () {
+    if (state.popoverOpen) closePopover();
+    else openPopover();
   });
 
-  document.getElementById('copyAllSites').addEventListener('click', function () {
-    var lines = sites.map(function (s) { return s.name + '  ' + s.url; });
-    copyText(lines.join('\n')).then(function (ok) { toast(ok ? '已复制 9 个站点链接' : '复制失败，请手动选择'); });
+  el.sourceSearch.addEventListener('input', function () {
+    renderSourceOptions(el.sourceSearch.value.trim());
   });
 
-  document.getElementById('copyAllSources').addEventListener('click', function () {
-    copyText(sourcesText(sites)).then(function (ok) { toast(ok ? '已复制全部 ' + totalSources() + ' 条测速链接' : '复制失败，请手动选择'); });
+  el.sourceOptions.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-url]');
+    if (!btn) return;
+    selectSource({
+      url: btn.getAttribute('data-url'),
+      label: btn.getAttribute('data-label'),
+      site: btn.getAttribute('data-site'),
+      siteName: ''
+    });
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!state.popoverOpen) return;
+    if (!el.sourcePopover.contains(e.target) && !el.sourceTrigger.contains(e.target)) closePopover();
+  });
+
+  document.getElementById('useCustom').addEventListener('click', function () {
+    var url = el.customUrl.value.trim();
+    if (!/^https?:\/\//i.test(url)) { toast('请输入 http(s) 开头的直链'); return; }
+    selectSource({ url: url, label: '自定义链接', site: '自定义', siteName: '自定义' });
+    el.customUrl.value = url;
+  });
+
+  document.getElementById('copyCurrent').addEventListener('click', function () {
+    var url = state.current && state.current.url;
+    if (!url) return;
+    copyText(url).then(function (ok) { toast(ok ? '当前测速链接已复制' : '复制失败，请手动选择'); });
+  });
+
+  el.startButton.addEventListener('click', function () {
+    if (state.running) stopTest(false);
+    else startTest();
+  });
+
+  el.threadRange.addEventListener('input', function () { setThreads(el.threadRange.value); });
+  el.limitInput.addEventListener('input', updateLimit);
+
+  el.librarySearch.addEventListener('input', function () {
+    state.libraryQuery = el.librarySearch.value.trim();
+    state.libraryLimit = 60;
+    renderLibrary();
+  });
+
+  el.libraryChips.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-site-filter]');
+    if (!btn) return;
+    state.librarySite = btn.getAttribute('data-site-filter');
+    state.libraryLimit = 60;
+    renderLibraryChips();
+    renderLibrary();
+  });
+
+  el.linkList.addEventListener('click', function (e) {
+    var useBtn = e.target.closest('[data-use-url]');
+    if (useBtn) {
+      selectSource({
+        url: useBtn.getAttribute('data-use-url'),
+        label: useBtn.getAttribute('data-use-label'),
+        site: useBtn.getAttribute('data-use-site'),
+        siteName: ''
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    var copyBtn = e.target.closest('[data-copy-url]');
+    if (copyBtn) {
+      copyText(copyBtn.getAttribute('data-copy-url')).then(function (ok) { toast(ok ? '测速链接已复制' : '复制失败，请手动选择'); });
+    }
+  });
+
+  document.getElementById('loadMore').addEventListener('click', function () {
+    state.libraryLimit += 60;
+    renderLibrary();
+  });
+
+  document.getElementById('copyFiltered').addEventListener('click', function () {
+    var items = filteredLinks();
+    copyText(items.map(function (x) { return x.url; }).join('\n')).then(function (ok) {
+      toast(ok ? '已复制当前 ' + items.length + ' 条链接' : '复制失败，请手动选择');
+    });
+  });
+
+  document.getElementById('copyAllLinks').addEventListener('click', function () {
+    copyText(ALL.map(function (x) { return x.url; }).join('\n')).then(function (ok) {
+      toast(ok ? '已复制全部 ' + ALL.length + ' 条链接' : '复制失败，请手动选择');
+    });
   });
 
   document.querySelector('.theme-switch').addEventListener('click', function (e) {
@@ -966,9 +1347,28 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     setTheme(btn.getAttribute('data-theme-btn'));
   });
 
+  el.sitesBody.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-copy-site]');
+    if (!btn) return;
+    var site = sites[Number(btn.getAttribute('data-copy-site'))];
+    copyText(site.url).then(function (ok) { toast(ok ? '站点链接已复制' : '复制失败，请手动选择'); });
+  });
+
   window.addEventListener('scroll', function () {
     document.getElementById('appHeader').classList.toggle('is-scrolled', window.scrollY > 4);
   }, { passive: true });
+
+  window.addEventListener('resize', function () { drawChart(); });
+
+  updateThemeButtons();
+  setThreads(8);
+  updateLimit();
+  updateSourceUI();
+  renderSourceOptions('');
+  renderLibraryChips();
+  renderLibrary();
+  renderSites();
+  drawChart();
 })();
 </script>
 </body>
