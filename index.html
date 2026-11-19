@@ -327,6 +327,10 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .limit-line input:focus { border-color: var(--blue); }
 .limit-line span { flex: 0 0 auto; margin-left: 6px; color: var(--muted-2); font-size: 11px; }
+.settings-hint { display: flex; align-items: center; justify-content: space-between; min-height: 22px; margin-top: 7px; color: var(--muted-2); font-size: 10.5px; line-height: 1.5; }
+.settings-hint span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reset-link { flex: 0 0 auto; margin-left: 10px; padding: 2px 0; color: var(--blue); background: transparent; border: 0; font-size: 10.5px; }
+.reset-link:hover { text-decoration: underline; }
 .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
 .metric-item {
   min-width: 0;
@@ -625,6 +629,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
       </div>
     </div>
 
+    <div class="settings-hint">
+      <span id="saveHint">更改会自动保存在本机</span>
+      <button class="reset-link" id="resetSettings" type="button">恢复默认</button>
+    </div>
+
     <div class="metric-grid">
       <div class="metric-item">
         <span class="metric-label">已消耗流量</span>
@@ -805,7 +814,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     libraryQuery: '',
     librarySite: '全部',
     libraryKind: '全部',
-    libraryLimit: 60
+    libraryLimit: 60,
+    hydrated: false
   };
 
   var el = {
@@ -819,6 +829,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     modeNote: document.getElementById('modeNote'),
     modeBadge: document.getElementById('modeBadge'),
     modeText: document.getElementById('modeText'),
+    saveHint: document.getElementById('saveHint'),
     customUrl: document.getElementById('customUrl'),
     totalValue: document.getElementById('totalValue'),
     totalUnit: document.getElementById('totalUnit'),
@@ -920,6 +931,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     if (state.running) stopTest();
     state.mode = mode;
     updateModeUI();
+    saveSettings();
     if (!silent) toast('已切换为' + MODE_META[mode].name);
   }
 
@@ -939,6 +951,76 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       cards[c].classList.toggle('is-active', cards[c].getAttribute('data-mode-card') === state.mode);
     }
     if (!state.running) updateMetrics();
+  }
+
+  var SETTINGS_KEY = 'traffic.consumer.settings.v1';
+
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || d.v !== 1) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function saveSettings() {
+    if (!state.hydrated) return;
+    try {
+      var src = state.current || {};
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        v: 1,
+        mode: state.mode,
+        source: { url: src.url, label: src.label, site: src.site, siteName: src.siteName },
+        customUrl: el.customUrl.value,
+        threads: state.threads,
+        limitMb: Number(el.limitInput.value) || 0
+      }));
+      if (el.saveHint) el.saveHint.textContent = '已保存到本机 · 再次打开会自动恢复';
+    } catch (e) {}
+  }
+
+  function restoreSettings() {
+    var d = loadSettings();
+    if (!d) return null;
+    if (MODE_META[d.mode]) state.mode = d.mode;
+    if (d.source && typeof d.source.url === 'string' && /^https?:\/\//i.test(d.source.url)) {
+      state.current = {
+        url: d.source.url,
+        label: d.source.label || '已保存的测速源',
+        site: d.source.site || '已保存',
+        siteName: d.source.siteName || '已保存'
+      };
+    }
+    var t = Number(d.threads);
+    if (isFinite(t)) {
+      t = Math.max(1, Math.min(32, Math.round(t)));
+      state.threads = t;
+      el.threadRange.value = t;
+    }
+    var lim = Number(d.limitMb);
+    if (isFinite(lim)) el.limitInput.value = Math.max(0, lim);
+    return d;
+  }
+
+  function resetSettings() {
+    if (state.running) stopTest();
+    state.hydrated = false;
+    try { localStorage.removeItem(SETTINGS_KEY); } catch (e) {}
+    state.current = CURATED[0];
+    state.mode = 'stream';
+    state.limitBytes = 0;
+    el.customUrl.value = '';
+    el.limitInput.value = '0';
+    setThreads(8);
+    updateSourceUI();
+    updateModeUI();
+    updateMetrics();
+    drawChart();
+    el.saveHint.textContent = '已恢复默认设置';
+    state.hydrated = true;
+    toast('已恢复默认设置');
   }
 
   function kindCount() {
@@ -1009,6 +1091,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     if (state.running) stopTest();
     state.current = item;
     updateSourceUI();
+    saveSettings();
     closePopover();
     renderSourceOptions(el.sourceSearch.value);
     if (!silent) toast('已切换测速源');
@@ -1035,11 +1118,13 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.threadRange.value = n;
     el.threadValue.textContent = n;
     el.threadValueText.textContent = n;
+    saveSettings();
   }
 
   function updateLimit() {
     var mb = Number(el.limitInput.value) || 0;
     state.limitBytes = mb > 0 ? mb * 1024 * 1024 : 0;
+    saveSettings();
   }
 
   function sleep(ms) {
@@ -1617,6 +1702,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
 
   el.threadRange.addEventListener('input', function () { setThreads(el.threadRange.value); });
   el.limitInput.addEventListener('input', updateLimit);
+  el.customUrl.addEventListener('input', saveSettings);
+  document.getElementById('resetSettings').addEventListener('click', resetSettings);
 
   el.librarySearch.addEventListener('input', function () {
     state.libraryQuery = el.librarySearch.value.trim();
@@ -1713,16 +1800,22 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     else if (themeQuery.addListener) themeQuery.addListener(applySystemTheme);
   }
 
+  var restored = restoreSettings();
   updateModeUI();
-  setThreads(8);
+  setThreads(state.threads);
   updateLimit();
   updateSourceUI();
+  if (restored && typeof restored.customUrl === 'string' && restored.customUrl) {
+    el.customUrl.value = restored.customUrl;
+  }
   renderSourceOptions('');
   renderKindChips();
   renderLibraryChips();
   renderLibrary();
   renderSites();
   drawChart();
+  state.hydrated = true;
+  el.saveHint.textContent = restored ? '已恢复上次设置 · 更改会自动保存在本机' : '更改会自动保存在本机';
 })();
 </script>
 </body>
