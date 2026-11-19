@@ -475,9 +475,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .btn-sm { height: 26px; padding: 0 8px; font-size: 10.5px; line-height: 24px; border-radius: 6px; }
 .btn[disabled] { color: var(--muted-2); background: var(--surface-2); border-color: var(--border); cursor: not-allowed; opacity: .7; }
 .empty { padding: 40px 16px; color: var(--muted-2); text-align: center; font-size: 12.5px; }
-.site-footer { width: min(856px, calc(100% - 40px)); margin: 18px auto 0; padding-bottom: 24px; color: var(--muted-2); text-align: center; font-size: 11.5px; line-height: 1.8; }
-.site-footer a { color: var(--blue); text-decoration: none; }
-.site-footer a:hover { text-decoration: underline; }
 .toast {
   position: fixed;
   z-index: 90;
@@ -526,7 +523,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .sites-body { padding: 0 16px 14px; }
   .site-row { flex-wrap: wrap; }
   .site-actions { width: 100%; margin: 6px 0 0 46px; }
-  .site-footer { width: calc(100% - 28px); }
   .custom-row .btn { padding: 0 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -683,11 +679,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
     <div class="sites-body" id="sitesBody"></div>
   </details>
 </main>
-
-<footer class="site-footer">
-  <div>整理自 <a href="https://xydh.fun/x1234" target="_blank" rel="noopener">xydh.fun/x1234</a>「流量消耗器」分类 · 页面风格参考 <a href="https://net.whiteyun.com/" target="_blank" rel="noopener">白云网络面板</a></div>
-  <div>资源链接由各站点公开页面提取，可能随站点更新变化 · 托管于 GitHub Pages</div>
-</footer>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
