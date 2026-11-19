@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>流量消耗器 · 在线流量测试与 519 条测速源</title>
 <meta name="description" content="可直接使用的在线流量消耗器：选择测速源、设置线程，实时统计下载流量与速度；内置 9 个站点的 519 条公开测速链接，可复制引用。">
-<meta name="theme-color" content="#f0fdfa">
+<meta name="theme-color" content="#f0fdfa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230d9488'/%3E%3Cpath d='M16 7v18M9 13l7-7 7 7M9 19l7 7 7-7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script>
 (function () {
-  try {
-    var saved = localStorage.getItem('traffic.theme');
-    var dark = saved ? saved === 'dark' : !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  } catch (e) {}
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  document.documentElement.setAttribute('data-theme', mq && mq.matches ? 'dark' : 'light');
 })();
 </script>
 <style>
@@ -51,10 +49,8 @@
   --muted-2: #7d8086;
   --border: #3d3f42;
   --border-strong: #4c4f54;
-  --blue: #2dd4bf;
-  --blue-strong: #5eead4;
   --brand: #ccfbf1;
-  --cyan: #22d3ee;
+  --cyan: #1e6983;
   --shadow: 0 18px 54px rgba(0, 0, 0, .38);
 }
 * { box-sizing: border-box; }
@@ -125,11 +121,12 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .brand-title { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; white-space: nowrap; }
 .brand-sub { display: block; margin-top: 1px; color: var(--muted-2); font-size: 9px; font-weight: 600; letter-spacing: .18em; white-space: nowrap; }
 .header-actions { display: flex; flex: 0 0 auto; align-items: center; }
-.theme-switch { height: 32px; display: inline-flex; align-items: center; padding: 3px; background: var(--page); border: 1px solid var(--border); border-radius: 9px; }
-[data-theme="dark"] .theme-switch { background: var(--surface-2); }
-.theme-switch button { height: 24px; min-width: 44px; padding: 0 9px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 12px; line-height: 24px; }
-.theme-switch button:hover { color: var(--blue); }
-.theme-switch button[aria-pressed="true"] { color: var(--brand); background: var(--surface); box-shadow: 0 1px 3px rgba(35, 52, 74, .12); }
+.mode-switch { height: 32px; display: inline-flex; align-items: center; padding: 3px; background: var(--page); border: 1px solid var(--border); border-radius: 9px; }
+[data-theme="dark"] .mode-switch { background: var(--surface-2); }
+.mode-switch-label { padding: 0 6px 0 5px; color: var(--muted-2); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
+.mode-switch button { height: 24px; min-width: 44px; padding: 0 8px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 11.5px; line-height: 24px; white-space: nowrap; }
+.mode-switch button:hover { color: var(--blue); }
+.mode-switch button.active { color: #fff; background: var(--blue); box-shadow: 0 1px 3px rgba(13, 148, 136, .25); }
 .repo-link {
   display: inline-flex;
   align-items: center;
@@ -301,6 +298,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .custom-row input:focus { border-color: var(--blue); }
 .custom-row .btn { margin-left: 6px; }
+.mode-note { display: flex; align-items: flex-start; margin-top: 8px; padding: 8px 10px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; font-size: 11.5px; line-height: 1.55; }
+.mode-note.is-estimate { background: rgba(230, 162, 60, .06); border-color: rgba(230, 162, 60, .38); }
+.mode-badge { flex: 0 0 auto; margin-right: 7px; padding: 1px 6px; color: var(--blue); background: rgba(13, 148, 136, .08); border: 1px solid rgba(13, 148, 136, .18); border-radius: 5px; font-size: 9.5px; font-weight: 700; line-height: 16px; white-space: nowrap; }
+.mode-note.is-estimate .mode-badge { color: var(--amber); background: rgba(230, 162, 60, .08); border-color: rgba(230, 162, 60, .28); }
+.mode-text { min-width: 0; }
 .settings-row { display: flex; align-items: flex-start; margin-top: 12px; }
 .thread-box { flex: 1; min-width: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .limit-box { flex: 0 0 208px; margin-left: 10px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
@@ -366,13 +368,44 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .start-button:active { transform: scale(.98); }
 .start-icon { width: 42px; height: 42px; display: block; }
 .start-icon-stop { display: none; }
-.start-button.is-running { background: #f56c6c linear-gradient(145deg, #f56c6c, #ff8a8a); box-shadow: 0 3px 8px #f56c6c, inset 0 2px 3px #ff8a8a; }
+.start-button::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border: 2px solid transparent;
+  border-top-color: #09c2de;
+  border-right-color: rgba(9, 194, 222, .35);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.start-button.is-running { box-shadow: 0 5px 13px rgba(72, 91, 237, .38), inset 0 2px 3px #7180ff; }
+.start-button.is-running::after { opacity: 1; animation: run-orbit 1.35s linear infinite; }
 .start-button.is-running .start-icon-play { display: none; }
 .start-button.is-running .start-icon-stop { display: block; }
+.start-button.is-launching { animation: run-enter .28s cubic-bezier(.2, .8, .3, 1); }
+.start-button.is-stopping { animation: run-exit .22s ease-out; }
+@keyframes run-orbit { to { transform: rotate(360deg); } }
+@keyframes run-enter { 0% { transform: scale(.96); } 100% { transform: scale(1); } }
+@keyframes run-exit { 0% { transform: scale(1); } 50% { transform: scale(.97); } 100% { transform: scale(1); } }
 .chart-wrap { position: relative; height: 170px; margin-top: 6px; padding: 8px 10px 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .chart-wrap canvas { width: 100%; height: 100%; display: block; }
 .chart-legend { position: absolute; top: 8px; right: 12px; color: var(--muted-2); font-size: 9.5px; letter-spacing: .08em; }
 .chart-legend b { color: var(--cyan); font-weight: 700; }
+.compare-card { margin-top: 14px; padding: 20px 22px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; }
+.compare-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
+.compare-item { min-width: 0; padding: 13px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; transition: border-color .16s ease, background .16s ease; }
+.compare-item + .compare-item { margin-left: 10px; }
+.compare-item.is-active { background: var(--surface); border-color: rgba(13, 148, 136, .45); box-shadow: inset 0 0 0 1px rgba(13, 148, 136, .1); }
+.compare-top { display: flex; align-items: center; justify-content: space-between; }
+.compare-top h3 { margin: 0; color: var(--text); font-size: 13px; font-weight: 700; }
+.compare-tag { height: 18px; padding: 0 6px; color: var(--green); background: rgba(103, 194, 58, .09); border: 1px solid rgba(103, 194, 58, .28); border-radius: 5px; font-size: 9px; font-weight: 700; line-height: 16px; white-space: nowrap; }
+.compare-tag.estimate { color: var(--amber); background: rgba(230, 162, 60, .08); border-color: rgba(230, 162, 60, .28); }
+.compare-row { margin-top: 8px; color: var(--muted); font-size: 10.5px; line-height: 1.6; }
+.compare-row b { display: block; color: var(--blue); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; }
+.compare-row.cons b { color: var(--amber); }
+.compare-fit { margin-top: 8px; padding-top: 7px; color: var(--muted-2); border-top: 1px dashed var(--border); font-size: 10px; line-height: 1.55; }
 .library-card {
   margin-top: 14px;
   padding: 22px 24px 18px;
@@ -489,6 +522,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .status-right { margin: 3px 0 0 0; }
   .library-card { padding: 18px 15px 14px; border-radius: 16px; }
   .lib-row { align-items: flex-start; }
+  .mode-switch-label { display: none; }
+  .mode-switch button { min-width: 38px; padding: 0 6px; font-size: 11px; }
+  .compare-card { padding: 16px 14px 14px; border-radius: 16px; }
+  .compare-grid { grid-template-columns: minmax(0, 1fr); }
+  .compare-item + .compare-item { margin: 8px 0 0 0; }
   .lib-actions-cell { flex-direction: column; margin-top: 2px; }
   .lib-actions-cell .btn { margin: 0 0 4px 0; }
   .sites-card summary { padding: 15px 16px; }
@@ -513,9 +551,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
     </span>
   </a>
   <div class="header-actions">
-    <div class="theme-switch" role="group" aria-label="外观模式">
-      <button type="button" data-theme-btn="light" aria-pressed="false">明亮</button>
-      <button type="button" data-theme-btn="dark" aria-pressed="false">黑暗</button>
+    <div class="mode-switch" role="group" aria-label="下载方式">
+      <span class="mode-switch-label">下载</span>
+      <button type="button" data-mode="stream" class="active" aria-pressed="true" title="流式读取（fetch + ReadableStream）：精确统计，需要 CORS">流式</button>
+      <button type="button" data-mode="xhr" aria-pressed="false" title="XHR 进度事件：兼容性好，需要 CORS">XHR</button>
+      <button type="button" data-mode="element" aria-pressed="false" title="元素加载：无需 CORS，流量为估算">元素</button>
     </div>
     <a class="repo-link" href="https://github.com/rdtscx/tc" target="_blank" rel="noopener">GitHub</a>
   </div>
@@ -557,6 +597,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
       <button class="btn" id="useCustom" type="button">使用</button>
       <button class="btn" id="copyCurrent" type="button">复制</button>
       <a class="btn" id="openCurrent" href="#" target="_blank" rel="noopener">打开</a>
+    </div>
+
+    <div class="mode-note" id="modeNote">
+      <span class="mode-badge" id="modeBadge">流式读取</span>
+      <span class="mode-text" id="modeText">ReadableStream 逐块读取，字节与速度精确，需要目标站允许 CORS。</span>
     </div>
 
     <div class="settings-row">
@@ -612,7 +657,32 @@ button:focus-visible, input:focus-visible, a:focus-visible {
     </div>
   </section>
 
-  <section class="library-card">
+  <section class="compare-card" id="modeCompare">
+    <div class="section-head">
+      <h2>三种下载方式对比</h2>
+      <span>右上角可切换</span>
+    </div>
+    <div class="compare-grid">
+      <article class="compare-item is-active" data-mode-card="stream">
+        <div class="compare-top"><h3>流式读取</h3><span class="compare-tag">精确</span></div>
+        <div class="compare-row"><b>优点</b><span>ReadableStream 逐块读取，字节与速度精确；内存占用低；可边下边统计、及时停止。</span></div>
+        <div class="compare-row cons"><b>缺点</b><span>需要目标站允许 CORS；旧浏览器或部分 WebView 不支持 ReadableStream。</span></div>
+        <div class="compare-fit">适用：默认首选，支持 CORS 的测速源。</div>
+      </article>
+      <article class="compare-item" data-mode-card="xhr">
+        <div class="compare-top"><h3>XHR 进度</h3><span class="compare-tag">兼容</span></div>
+        <div class="compare-row"><b>优点</b><span>兼容性最好；onprogress 直接给出已接收字节，统计精确；可随时 abort。</span></div>
+        <div class="compare-row cons"><b>缺点</b><span>响应缓存在内存；单次最多 16MB 后自动断开重连；同样需要 CORS。</span></div>
+        <div class="compare-fit">适用：fetch 流式不可用、旧设备或旧 WebView。</div>
+      </article>
+      <article class="compare-item" data-mode-card="element">
+        <div class="compare-top"><h3>元素加载</h3><span class="compare-tag estimate">估算</span></div>
+        <div class="compare-row"><b>优点</b><span>不要求 CORS；用图片、视频或预加载标签产生真实下行流量，适合只能跨域引用的链接。</span></div>
+        <div class="compare-row cons"><b>缺点</b><span>读不到响应体，字节按资源类型估算；受缓存与解码影响，流量和速度不精确。</span></div>
+        <div class="compare-fit">适用：只求跑流量、不需要精确计量的场景。</div>
+      </article>
+    </div>
+  </section>
     <div class="section-head">
       <h2>全部测速链接</h2>
       <span id="libraryCount">519 条</span>
@@ -691,6 +761,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
 
   var state = {
     current: defaultItem,
+    mode: 'stream',
     running: false,
     total: 0,
     startTime: 0,
@@ -702,6 +773,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     fails: 0,
     samples: [],
     controller: null,
+    xhrs: [],
+    elements: [],
+    estimated: false,
     uiTimer: null,
     chartTimer: null,
     limitBytes: 0,
@@ -721,6 +795,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     sourceName: document.getElementById('sourceName'),
     sourceUrl: document.getElementById('sourceUrl'),
     corsTag: document.getElementById('corsTag'),
+    modeNote: document.getElementById('modeNote'),
+    modeBadge: document.getElementById('modeBadge'),
+    modeText: document.getElementById('modeText'),
     customUrl: document.getElementById('customUrl'),
     totalValue: document.getElementById('totalValue'),
     totalUnit: document.getElementById('totalUnit'),
@@ -810,19 +887,36 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return ok;
   }
 
-  function setTheme(mode) {
-    document.documentElement.setAttribute('data-theme', mode);
-    try { localStorage.setItem('traffic.theme', mode); } catch (e) {}
-    updateThemeButtons();
-    drawChart();
+  var MODE_META = {
+    stream: { name: '流式读取', short: '流式', badge: '精确', text: 'ReadableStream 逐块读取，字节与速度精确，需要目标站允许 CORS。' },
+    xhr: { name: 'XHR 进度', short: 'XHR', badge: '兼容', text: '兼容性好，onprogress 直接统计已接收字节；单次最多 16MB 后自动断开重连，需要 CORS。' },
+    element: { name: '元素加载', short: '元素', badge: '估算', text: '用图片、视频或预加载标签产生流量，不要求 CORS；字节按资源类型估算，流量和速度不精确。' }
+  };
+
+  function setMode(mode, silent) {
+    if (!MODE_META[mode]) return;
+    if (state.running) stopTest();
+    state.mode = mode;
+    updateModeUI();
+    if (!silent) toast('已切换为' + MODE_META[mode].name);
   }
 
-  function updateThemeButtons() {
-    var mode = document.documentElement.getAttribute('data-theme') || 'light';
-    var btns = document.querySelectorAll('[data-theme-btn]');
+  function updateModeUI() {
+    var meta = MODE_META[state.mode] || MODE_META.stream;
+    var btns = document.querySelectorAll('[data-mode]');
     for (var i = 0; i < btns.length; i++) {
-      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-theme-btn') === mode ? 'true' : 'false');
+      var on = btns[i].getAttribute('data-mode') === state.mode;
+      btns[i].classList.toggle('active', on);
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
     }
+    el.modeBadge.textContent = meta.name;
+    el.modeText.textContent = meta.text;
+    el.modeNote.classList.toggle('is-estimate', state.mode === 'element');
+    var cards = document.querySelectorAll('[data-mode-card]');
+    for (var c = 0; c < cards.length; c++) {
+      cards[c].classList.toggle('is-active', cards[c].getAttribute('data-mode-card') === state.mode);
+    }
+    if (!state.running) updateMetrics();
   }
 
   function updateSourceUI() {
@@ -934,19 +1028,63 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
   }
 
-  function worker() {
+  var XHR_REQUEST_CAP = 16 * 1024 * 1024;
+  var ELEMENT_ESTIMATE = { image: 512 * 1024, video: 2 * 1024 * 1024, audio: 1024 * 1024, script: 256 * 1024, style: 128 * 1024, other: 512 * 1024 };
+
+  function addBytes(n) {
+    if (!n || !state.running) return;
+    state.total += n;
+    if (state.limitBytes && state.total >= state.limitBytes) stopTest(true);
+  }
+
+  function addCacheBuster(url) {
+    var sep = url.indexOf('?') === -1 ? '?' : '&';
+    return url + sep + '_tc=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function resourceType(url) {
+    var lower = url.toLowerCase();
+    if (/\.(mp4|webm|ogg|mov|m4v)(\?|$)/.test(lower)) return 'video';
+    if (/\.(mp3|wav|aac|flac|m4a)(\?|$)/.test(lower)) return 'audio';
+    if (/\.(js|mjs)(\?|$)/.test(lower)) return 'script';
+    if (/\.css(\?|$)/.test(lower)) return 'style';
+    return 'image';
+  }
+
+  function hasTimingEntry(url) {
+    try { return performance.getEntriesByName(url).length > 0; } catch (e) { return false; }
+  }
+
+  function lastTransferSize(url) {
+    try {
+      var entries = performance.getEntriesByName(url);
+      if (!entries.length) return 0;
+      var entry = entries[entries.length - 1];
+      return entry.transferSize || entry.encodedBodySize || entry.decodedBodySize || 0;
+    } catch (e) { return 0; }
+  }
+
+  function startWorker() {
+    if (!state.running) return;
+    if (state.mode === 'xhr') xhrWorker();
+    else if (state.mode === 'element') elementWorker();
+    else streamWorker();
+  }
+
+  function streamWorker() {
     if (!state.running) return;
     var url = state.current.url;
     var ctrl = state.controller;
     state.requests++;
     var res;
     try {
-      res = fetch(url, {
+      var opts = {
         cache: 'no-store',
         mode: 'cors',
-        referrerPolicy: 'no-referrer',
-        signal: ctrl.signal
-      });
+        referrerPolicy: 'no-referrer'
+      };
+      if (ctrl) opts.signal = ctrl.signal;
+      res = fetch(url, opts);
     } catch (e) {
       handleWorkerError(e);
       return;
@@ -964,15 +1102,12 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
           }
           if (result.done) {
             try { reader.cancel(); } catch (e) {}
-            worker();
+            startWorker();
             return;
           }
           if (result.value && result.value.byteLength) {
-            state.total += result.value.byteLength;
-            if (state.limitBytes && state.total >= state.limitBytes) {
-              stopTest(true);
-              return;
-            }
+            addBytes(result.value.byteLength);
+            if (!state.running) return;
           }
           return pump();
         });
@@ -983,19 +1118,146 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     });
   }
 
+  function xhrWorker() {
+    if (!state.running) return;
+    state.requests++;
+    var url = addCacheBuster(state.current.url);
+    var xhr = new XMLHttpRequest();
+    var lastLoaded = 0;
+    var finished = false;
+    state.xhrs.push(xhr);
+
+    function cleanup() {
+      var idx = state.xhrs.indexOf(xhr);
+      if (idx >= 0) state.xhrs.splice(idx, 1);
+    }
+
+    function fail(err) {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (state.running) handleWorkerError(err || new Error('XHR 请求失败'));
+    }
+
+    xhr.open('GET', url, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.timeout = 30000;
+    xhr.onprogress = function (e) {
+      if (!state.running) return;
+      var loaded = e.loaded || 0;
+      if (loaded > lastLoaded) {
+        addBytes(loaded - lastLoaded);
+        lastLoaded = loaded;
+      }
+      if (loaded >= XHR_REQUEST_CAP) {
+        try { xhr.abort(); } catch (err) {}
+      }
+    };
+    xhr.onload = function () {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (!state.running) return;
+      var size = xhr.response ? xhr.response.byteLength : 0;
+      if (size > lastLoaded) addBytes(size - lastLoaded);
+      if (state.running) startWorker();
+    };
+    xhr.onerror = function () { fail(new Error('XHR 请求失败')); };
+    xhr.ontimeout = function () { fail(new Error('XHR 请求超时')); };
+    xhr.onabort = function () {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (state.running) startWorker();
+    };
+    try { xhr.send(); } catch (e) { fail(e); }
+  }
+
+  function elementWorker() {
+    if (!state.running) return;
+    state.requests++;
+    var type = resourceType(state.current.url);
+    var finalUrl = addCacheBuster(state.current.url);
+    var node;
+    var done = false;
+    var timer;
+
+    function cleanup() {
+      clearTimeout(timer);
+      if (node && node.parentNode) node.parentNode.removeChild(node);
+      var idx = state.elements.indexOf(node);
+      if (idx >= 0) state.elements.splice(idx, 1);
+    }
+
+    function finish() {
+      if (done || !state.running) { done = true; cleanup(); return; }
+      done = true;
+      if (!hasTimingEntry(finalUrl)) {
+        state.fails++;
+        cleanup();
+        if (!state.errorShown && state.total === 0 && state.fails >= Math.max(8, state.threads * 4)) {
+          state.errorShown = true;
+          toast('元素加载没有产生可统计请求，请换图片/视频源或切换下载方式');
+          setStatus('元素加载失败', 'error');
+          stopTest(false, true);
+          return;
+        }
+        if (state.running) setTimeout(elementWorker, 600);
+        return;
+      }
+      var size = lastTransferSize(finalUrl);
+      var estimated = false;
+      if (!size) {
+        size = ELEMENT_ESTIMATE[type] || ELEMENT_ESTIMATE.other;
+        estimated = true;
+      }
+      state.estimated = state.estimated || estimated;
+      addBytes(size);
+      cleanup();
+      if (state.running) setTimeout(elementWorker, 40);
+    }
+
+    if (type === 'video' || type === 'audio') {
+      node = document.createElement(type);
+      node.muted = true;
+      node.preload = 'auto';
+      node.onloadeddata = node.onerror = finish;
+    } else if (type === 'script' || type === 'style') {
+      node = document.createElement('link');
+      node.rel = 'preload';
+      node.as = type === 'script' ? 'script' : 'style';
+      node.onload = node.onerror = finish;
+    } else {
+      node = new Image();
+      node.onload = node.onerror = finish;
+    }
+    node.style.display = 'none';
+    state.elements.push(node);
+    timer = setTimeout(finish, 15000);
+
+    if (node.tagName === 'LINK') {
+      node.href = finalUrl;
+      document.body.appendChild(node);
+    } else {
+      node.src = finalUrl;
+      document.body.appendChild(node);
+      if (node.load) node.load();
+    }
+  }
+
   function handleWorkerError(e) {
     if (!state.running) return;
     if (e && e.name === 'AbortError') return;
     state.fails++;
     if (!state.errorShown && state.total === 0 && state.fails >= Math.max(4, state.threads * 2)) {
       state.errorShown = true;
-      toast('当前源跨域或连接失败，请选择带 CORS 标记的推荐源');
+      toast('当前源跨域或连接失败，请切换下载方式或选择带 CORS 标记的源');
       setStatus('测速源连接失败', 'error');
       stopTest(false, true);
       return;
     }
     sleep(650).then(function () {
-      if (state.running) worker();
+      if (state.running) startWorker();
     });
   }
 
@@ -1008,7 +1270,12 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var total = formatBytes(state.total, 2);
     el.totalValue.textContent = total.value;
     el.totalUnit.textContent = total.unit;
-    el.totalSub.textContent = state.limitBytes ? '目标 ' + formatBytes(state.limitBytes, 0).value + ' ' + formatBytes(state.limitBytes, 0).unit : (state.running ? '持续下载中' : (state.total ? '测试已停止' : '等待开始'));
+    var sub;
+    if (state.limitBytes) sub = '目标 ' + formatBytes(state.limitBytes, 0).value + ' ' + formatBytes(state.limitBytes, 0).unit;
+    else if (state.running) sub = state.mode === 'element' ? '估算流量 · 持续加载' : '持续下载中';
+    else if (state.total) sub = state.mode === 'element' ? '估算流量 · 已停止' : '测试已停止';
+    else sub = '等待开始';
+    el.totalSub.textContent = sub;
 
     var speed = formatBytes(state.speedBps, 2);
     el.speedValue.textContent = speed.value;
@@ -1154,13 +1421,17 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.fails = 0;
     state.samples = [];
     state.errorShown = false;
-    state.controller = new AbortController();
-    el.startButton.classList.add('is-running');
+    state.estimated = false;
+    state.xhrs = [];
+    state.elements = [];
+    state.controller = window.AbortController ? new AbortController() : null;
+    el.startButton.classList.add('is-running', 'is-launching');
+    setTimeout(function () { el.startButton.classList.remove('is-launching'); }, 320);
     el.startButton.setAttribute('aria-label', '停止测试');
-    setStatus('运行中 · ' + state.threads + ' 线程', 'running');
+    setStatus('运行中 · ' + MODE_META[state.mode].short + ' · ' + state.threads + ' 线程', 'running');
     updateMetrics();
     drawChart();
-    for (var i = 0; i < state.threads; i++) worker();
+    for (var i = 0; i < state.threads; i++) startWorker();
     state.uiTimer = setInterval(tick, 250);
     state.chartTimer = setInterval(sample, 500);
   }
@@ -1172,12 +1443,23 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       try { state.controller.abort(); } catch (e) {}
       state.controller = null;
     }
+    for (var x = 0; x < state.xhrs.length; x++) {
+      try { state.xhrs[x].abort(); } catch (e) {}
+    }
+    state.xhrs = [];
+    for (var y = 0; y < state.elements.length; y++) {
+      var node = state.elements[y];
+      if (node && node.parentNode) node.parentNode.removeChild(node);
+    }
+    state.elements = [];
     clearInterval(state.uiTimer);
     clearInterval(state.chartTimer);
     state.uiTimer = null;
     state.chartTimer = null;
     state.speedBps = 0;
     el.startButton.classList.remove('is-running');
+    el.startButton.classList.add('is-stopping');
+    setTimeout(function () { el.startButton.classList.remove('is-stopping'); }, 240);
     el.startButton.setAttribute('aria-label', '开始测试');
     if (!silent) setStatus(auto ? '已达到目标流量' : '已停止', auto ? 'running' : '');
     updateMetrics();
@@ -1350,10 +1632,16 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     });
   });
 
-  document.querySelector('.theme-switch').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-theme-btn]');
+  document.querySelector('.mode-switch').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-mode]');
     if (!btn) return;
-    setTheme(btn.getAttribute('data-theme-btn'));
+    setMode(btn.getAttribute('data-mode'));
+  });
+
+  document.getElementById('modeCompare').addEventListener('click', function (e) {
+    var card = e.target.closest('[data-mode-card]');
+    if (!card) return;
+    setMode(card.getAttribute('data-mode-card'));
   });
 
   el.sitesBody.addEventListener('click', function (e) {
@@ -1369,7 +1657,17 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
 
   window.addEventListener('resize', function () { drawChart(); });
 
-  updateThemeButtons();
+  var themeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function applySystemTheme() {
+    document.documentElement.setAttribute('data-theme', themeQuery && themeQuery.matches ? 'dark' : 'light');
+    drawChart();
+  }
+  if (themeQuery) {
+    if (themeQuery.addEventListener) themeQuery.addEventListener('change', applySystemTheme);
+    else if (themeQuery.addListener) themeQuery.addListener(applySystemTheme);
+  }
+
+  updateModeUI();
   setThreads(8);
   updateLimit();
   updateSourceUI();
