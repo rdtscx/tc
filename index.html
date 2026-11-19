@@ -673,6 +673,15 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return false;
   }
 
+  function isRecommended(url) {
+    if (!isCors(url)) return false;
+    if (url.indexOf('speed.cloudflare.com') !== -1) {
+      var m = url.match(/bytes=(\d+)/);
+      if (m && Number(m[1]) > 100000000) return false;
+    }
+    return true;
+  }
+
   var DEFAULT_URL = 'https://speed.cloudflare.com/__down?bytes=10485760';
   var defaultItem = null;
   for (var di = 0; di < ALL.length; di++) {
@@ -834,7 +843,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var recommended = [];
     var seen = {};
     for (var i = 0; i < ALL.length; i++) {
-      if (isCors(ALL[i].url) && !seen[ALL[i].url]) {
+      if (isRecommended(ALL[i].url) && !seen[ALL[i].url]) {
         seen[ALL[i].url] = true;
         recommended.push(ALL[i]);
       }
