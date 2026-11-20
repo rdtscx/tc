@@ -1172,6 +1172,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   }
 
   function openCustomPopover() {
+    if (state.settingsOpen) closeSettings();
+    if (state.popoverOpen) closePopover();
     state.customOpen = true;
     state.customEdit = -1;
     el.customPopover.hidden = false;
