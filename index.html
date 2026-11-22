@@ -89,6 +89,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   padding: 0 20px;
   background: var(--header);
   border-bottom: 1px solid transparent;
+  transition: border-color .2s ease, background .2s ease;
 }
 .app-header.is-scrolled { border-bottom-color: var(--border); }
 .brand { display: inline-flex; align-items: center; min-width: 0; color: var(--brand); text-decoration: none; }
@@ -124,7 +125,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .mode-switch { height: 32px; display: inline-flex; align-items: center; padding: 3px; background: var(--page); border: 1px solid var(--border); border-radius: 9px; }
 [data-theme="dark"] .mode-switch { background: var(--surface-2); }
 .mode-switch-label { padding: 0 6px 0 5px; color: var(--muted-2); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
-.mode-switch button { height: 24px; min-width: 44px; padding: 0 8px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 11.5px; line-height: 24px; white-space: nowrap; }
+.mode-switch button { height: 24px; min-width: 44px; padding: 0 8px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 11.5px; line-height: 24px; white-space: nowrap; transition: color .14s ease, background .16s ease, box-shadow .16s ease; }
 .mode-switch button:hover { color: var(--blue); }
 .mode-switch button.active { color: #fff; background: var(--blue); box-shadow: 0 1px 3px rgba(13, 148, 136, .25); }
 .repo-link {
@@ -269,6 +270,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   border: 0;
   border-radius: 7px;
   text-align: left;
+  transition: color .12s ease, background .14s ease;
 }
 .option-item:hover, .option-item.is-selected { color: var(--blue); background: var(--surface-2); }
 .option-copy { min-width: 0; flex: 1; display: block; }
@@ -408,6 +410,22 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .limit-line select:focus { border-color: var(--blue); }
 .keep-alive-audio { display: none; }
 @keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes card-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes top-flow { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes dot-pulse { 0% { box-shadow: 0 0 0 0 rgba(103, 194, 58, .45); } 70% { box-shadow: 0 0 0 6px rgba(103, 194, 58, 0); } 100% { box-shadow: 0 0 0 0 rgba(103, 194, 58, 0); } }
+@keyframes dot-pulse-cyan { 0% { box-shadow: 0 0 0 0 rgba(9, 194, 222, .45); } 70% { box-shadow: 0 0 0 5px rgba(9, 194, 222, 0); } 100% { box-shadow: 0 0 0 0 rgba(9, 194, 222, 0); } }
+@keyframes halo-breathe { 0%, 100% { transform: scale(.92); opacity: .5; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes start-ripple { from { transform: scale(.74); opacity: .85; } to { transform: scale(1.26); opacity: 0; } }
+@keyframes body-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.tool-card { animation: card-in .46s cubic-bezier(.2, .75, .3, 1) both; }
+.library-card { animation: card-in .46s cubic-bezier(.2, .75, .3, 1) .06s both; }
+.sites-card { animation: card-in .46s cubic-bezier(.2, .75, .3, 1) .12s both; }
+.tool-card.is-running::before {
+  height: 3px;
+  background: linear-gradient(90deg, rgba(13, 148, 136, 0), #0d9488 28%, #09c2de 68%, rgba(9, 194, 222, 0));
+  background-size: 200% 100%;
+  animation: top-flow 1.5s linear infinite;
+}
 .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
 .metric-item {
   min-width: 0;
@@ -418,18 +436,18 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .metric-item + .metric-item { margin-left: 10px; }
 .metric-label { color: var(--muted-2); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; }
-.metric-value { display: block; margin-top: 3px; color: var(--brand); font-size: 23px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; white-space: nowrap; }
+.metric-value { display: block; margin-top: 3px; color: var(--brand); font-size: 23px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .metric-value small { margin-left: 3px; color: var(--muted-2); font-size: 10px; font-weight: 500; letter-spacing: 0; }
 .metric-sub { display: block; margin-top: 1px; color: var(--muted-2); font-size: 10px; white-space: nowrap; }
 .metric-speed .metric-value { color: var(--cyan); }
 .run-status { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; color: var(--muted-2); font-size: 11.5px; }
 .status-left { min-width: 0; display: flex; align-items: center; }
 .status-dot { width: 7px; height: 7px; flex: 0 0 7px; display: inline-block; margin-right: 6px; background: var(--muted-2); border-radius: 50%; }
-.status-dot.is-running { background: var(--green); box-shadow: 0 0 0 3px rgba(103, 194, 58, .14); }
+.status-dot.is-running { background: var(--green); box-shadow: 0 0 0 3px rgba(103, 194, 58, .14); animation: dot-pulse 1.8s ease-out infinite; }
 .status-dot.is-error { background: var(--red); }
 .status-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.status-right { flex: 0 0 auto; margin-left: 10px; font-family: var(--mono); }
-.action-zone { display: grid; place-items: center; padding: 18px 0 6px; }
+.status-right { flex: 0 0 auto; margin-left: 10px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.action-zone { display: grid; place-items: center; padding: 18px 0 14px; }
 .start-button {
   position: relative;
   width: 132px;
@@ -447,7 +465,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 [data-theme="dark"] .start-button { box-shadow: 0 3px 14px rgba(72, 91, 237, .55), inset 0 2px 3px #6576ff; }
 .start-button:hover { filter: brightness(1.04); transform: scale(1.012); }
 .start-button:active { transform: scale(.98); }
-.start-icon { width: 42px; height: 42px; display: block; }
+.start-icon { width: 42px; height: 42px; display: block; transition: transform .22s cubic-bezier(.3, 1.4, .5, 1); }
+.start-button:hover .start-icon { transform: scale(1.06); }
 .start-icon-stop { display: none; }
 .start-button::after {
   content: "";
@@ -465,6 +484,24 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .start-button.is-running::after { opacity: 1; animation: run-orbit 1.35s linear infinite; }
 .start-button.is-running .start-icon-play { display: none; }
 .start-button.is-running .start-icon-stop { display: block; }
+.start-button.is-running::before {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(9, 194, 222, .34), rgba(9, 194, 222, 0) 68%);
+  animation: halo-breathe 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.start-button .start-ripple {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(9, 194, 222, .8);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+.start-button.is-rippling .start-ripple { animation: start-ripple .68s ease-out; }
 .start-button.is-launching { animation: run-enter .28s cubic-bezier(.2, .8, .3, 1); }
 .start-button.is-stopping { animation: run-exit .22s ease-out; }
 @keyframes run-orbit { to { transform: rotate(360deg); } }
@@ -473,6 +510,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .chart-wrap { position: relative; height: 170px; margin-top: 6px; padding: 8px 10px 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .chart-wrap canvas { width: 100%; height: 100%; display: block; }
 .chart-legend { position: absolute; top: 8px; right: 12px; color: var(--muted-2); font-size: 9.5px; letter-spacing: .08em; }
+.chart-legend::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; background: var(--muted-2); border-radius: 50%; vertical-align: 1px; transition: background .2s ease; }
+.tool-card.is-running .chart-legend::before { background: var(--cyan); animation: dot-pulse-cyan 1.8s ease-out infinite; }
 .chart-legend b { color: var(--cyan); font-weight: 700; }
 .library-card {
   margin-top: 14px;
@@ -493,7 +532,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .lib-actions { display: flex; flex-wrap: wrap; margin-top: 8px; }
 .lib-actions .btn { margin: 0 6px 6px 0; }
 .chips { display: flex; flex-wrap: wrap; margin-top: 4px; }
-.chip { height: 27px; margin: 0 5px 5px 0; padding: 0 10px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; font-size: 11px; line-height: 25px; }
+.chip { height: 27px; margin: 0 5px 5px 0; padding: 0 10px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; font-size: 11px; line-height: 25px; transition: color .14s ease, border-color .14s ease, background .16s ease, transform .12s ease; }
+.chip:active { transform: scale(.96); }
 .chip:hover { color: var(--blue); border-color: rgba(13, 148, 136, .42); }
 .chip.active { color: #fff; background: var(--blue); border-color: var(--blue); }
 .link-list { margin-top: 4px; }
@@ -501,7 +541,9 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .lib-group-title { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 2px; padding: 8px 2px 6px; color: var(--blue); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
 .lib-group-title:first-child { margin-top: 6px; }
 .lib-group-title span { color: var(--muted-2); font-size: 10px; font-weight: 400; letter-spacing: 0; }
-.lib-row { display: flex; align-items: center; padding: 9px 1px; border-bottom: 1px solid var(--border); }
+.lib-row { display: flex; align-items: center; padding: 9px 1px; border-bottom: 1px solid var(--border); transition: background .14s ease; }
+.lib-row:hover { background: rgba(13, 148, 136, .04); }
+[data-theme="dark"] .lib-row:hover { background: rgba(45, 212, 191, .07); }
 .lib-row:last-child { border-bottom: 0; }
 .lib-badge { flex: 0 0 auto; min-width: 34px; height: 24px; display: grid; place-items: center; padding: 0 5px; margin-right: 9px; color: var(--blue); background: rgba(13, 148, 136, .07); border: 1px solid rgba(13, 148, 136, .18); border-radius: 6px; font-size: 10px; font-weight: 700; }
 .lib-copy { flex: 1; min-width: 0; display: block; }
@@ -516,8 +558,9 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .sites-card summary { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; color: var(--brand); cursor: pointer; list-style: none; font-size: 15px; font-weight: 700; }
 .sites-card summary::-webkit-details-marker { display: none; }
 .sites-card summary small { color: var(--muted-2); font-size: 11px; font-weight: 400; }
-.sites-card summary::after { content: "⌄"; margin-left: 10px; color: var(--muted-2); font-size: 14px; }
+.sites-card summary::after { content: "⌄"; margin-left: 10px; color: var(--muted-2); font-size: 14px; transition: transform .2s ease; }
 .sites-card[open] summary::after { transform: rotate(180deg); }
+.sites-card[open] .sites-body { animation: body-in .24s ease; }
 .sites-body { padding: 0 24px 18px; }
 .site-row { display: flex; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--border); }
 .site-badge { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; margin-right: 10px; color: var(--blue); background: rgba(13, 148, 136, .08); border: 1px solid rgba(13, 148, 136, .18); border-radius: 10px; font-size: 11px; font-weight: 800; }
@@ -748,6 +791,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
       <button class="start-button" id="startButton" type="button" aria-label="开始测试">
         <svg class="start-icon start-icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
         <svg class="start-icon start-icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
+        <span class="start-ripple" aria-hidden="true"></span>
       </button>
     </div>
 
@@ -864,6 +908,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     estimated: false,
     uiTimer: null,
     chartTimer: null,
+    chartRaf: 0,
     limitBytes: 0,
     threads: 8,
     errorShown: false,
@@ -879,7 +924,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     autoStart: false,
     keepAlive: false,
     limitUnit: 'MB',
-    hydrated: false
+    hydrated: false,
+    metricTarget: null,
+    reducedMotion: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   };
 
   var el = {
@@ -926,6 +973,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     customLink: document.getElementById('customLink'),
     customName: document.getElementById('customName'),
     canvas: document.getElementById('speedChart'),
+    toolCard: document.querySelector('.tool-card'),
     linkList: document.getElementById('linkList'),
     libraryChips: document.getElementById('libraryChips'),
     kindChips: document.getElementById('kindChips'),
@@ -959,15 +1007,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   function formatSpeed(bytesPerSec) {
     var f = formatBytes(bytesPerSec, 2);
     return f.value + ' ' + f.unit + '/s';
-  }
-
-  // 目标流量按实际字节精确换算：最多保留 3 位小数，并去掉末尾无意义的 0
-  function formatLimitText(bytes) {
-    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    var v = bytes, i = 0;
-    while (v >= 1024 && i < units.length - 1) { v = v / 1024; i++; }
-    var s = i === 0 ? String(Math.round(v)) : String(Number(v.toFixed(3)));
-    return s + ' ' + units[i];
   }
 
   function formatClock(ms) {
@@ -1050,7 +1089,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   function limitValueOf() {
     var v = parseFloat(el.limitInput.value);
     if (!isFinite(v) || v < 0) return 0;
-    return Math.round(v * 1000) / 1000;
+    return Math.round(v * 100) / 100;
   }
 
   function saveSettings() {
@@ -1094,7 +1133,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.limitUnit = unit;
     el.limitUnit.value = unit;
     var lim = d.v >= 2 ? Number(d.limitValue) : Number(d.limitMb);
-    if (isFinite(lim)) el.limitInput.value = String(Math.max(0, Math.round(lim * 1000) / 1000));
+    if (isFinite(lim)) el.limitInput.value = String(Math.max(0, Math.round(lim * 100) / 100));
     state.autoStart = !!d.autoStart;
     state.keepAlive = !!d.keepAlive;
     el.optAutoStart.checked = state.autoStart;
@@ -1437,8 +1476,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var v = limitValueOf();
     state.limitBytes = v > 0 ? Math.round(v * UNIT_BYTES[unit]) : 0;
     saveSettings();
-    // 目标值变化后立即刷新副标题，避免仍显示上一次的换算结果
-    updateTotalSub();
   }
 
   function sleep(ms) {
@@ -1680,38 +1717,61 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.statusDot.className = 'status-dot' + (kind ? ' is-' + kind : '');
   }
 
-  function updateTotalSub() {
+  function updateMetrics() {
+    var elapsed = state.running ? Date.now() - state.startTime : (state.startTime ? state.lastTime - state.startTime : 0);
+    var avg = elapsed > 0 ? state.total / (elapsed / 1000) : 0;
+    if (state.running && !state.reducedMotion) {
+      state.metricTarget = { total: state.total, speed: state.speedBps, avg: avg };
+    } else {
+      state.metricTarget = null;
+      shownMetrics.total = state.total;
+      shownMetrics.speed = state.speedBps;
+      shownMetrics.avg = avg;
+    }
+    paintMetrics();
+
     var sub;
-    if (state.limitBytes) sub = '目标 ' + formatLimitText(state.limitBytes);
+    if (state.limitBytes) sub = '目标 ' + formatBytes(state.limitBytes, 0).value + ' ' + formatBytes(state.limitBytes, 0).unit;
     else if (state.running) sub = state.mode === 'element' ? '估算流量 · 持续加载' : '持续下载中';
     else if (state.total) sub = state.mode === 'element' ? '估算流量 · 已停止' : '测试已停止';
     else sub = '等待开始';
     el.totalSub.textContent = sub;
-  }
-
-  function updateMetrics() {
-    var total = formatBytes(state.total, 2);
-    el.totalValue.textContent = total.value;
-    el.totalUnit.textContent = total.unit;
-    updateTotalSub();
-
-    var speed = formatBytes(state.speedBps, 2);
-    el.speedValue.textContent = speed.value;
-    el.speedUnit.textContent = speed.unit + '/s';
-    el.speedSub.textContent = '≈ ' + (state.speedBps * 8 / 1000000).toFixed(2) + ' Mbps';
-
-    var elapsed = state.running ? Date.now() - state.startTime : (state.startTime ? state.lastTime - state.startTime : 0);
-    var avg = elapsed > 0 ? state.total / (elapsed / 1000) : 0;
-    var avgF = formatBytes(avg, 2);
-    el.avgValue.textContent = avgF.value;
-    el.avgUnit.textContent = avgF.unit + '/s';
-    el.avgSub.textContent = '≈ ' + (avg * 8 / 1000000).toFixed(2) + ' Mbps';
 
     el.runtime.textContent = formatClock(elapsed);
     el.requests.textContent = state.requests;
     el.fails.textContent = state.fails;
   }
 
+  var shownMetrics = { total: 0, speed: 0, avg: 0 };
+
+  function paintMetrics() {
+    var total = formatBytes(shownMetrics.total, 2);
+    el.totalValue.textContent = total.value;
+    el.totalUnit.textContent = total.unit;
+
+    var speed = formatBytes(shownMetrics.speed, 2);
+    el.speedValue.textContent = speed.value;
+    el.speedUnit.textContent = speed.unit + '/s';
+    el.speedSub.textContent = '≈ ' + (shownMetrics.speed * 8 / 1000000).toFixed(2) + ' Mbps';
+
+    var avgF = formatBytes(shownMetrics.avg, 2);
+    el.avgValue.textContent = avgF.value;
+    el.avgUnit.textContent = avgF.unit + '/s';
+    el.avgSub.textContent = '≈ ' + (shownMetrics.avg * 8 / 1000000).toFixed(2) + ' Mbps';
+  }
+
+  function stepMetrics() {
+    var t = state.metricTarget;
+    if (!t) return;
+    var k = 0.16;
+    shownMetrics.total += (t.total - shownMetrics.total) * k;
+    shownMetrics.speed += (t.speed - shownMetrics.speed) * k;
+    shownMetrics.avg += (t.avg - shownMetrics.avg) * k;
+    if (Math.abs(t.total - shownMetrics.total) < 0.5) shownMetrics.total = t.total;
+    if (Math.abs(t.speed - shownMetrics.speed) < 0.5) shownMetrics.speed = t.speed;
+    if (Math.abs(t.avg - shownMetrics.avg) < 0.5) shownMetrics.avg = t.avg;
+    paintMetrics();
+  }
   function tick() {
     if (!state.running) return;
     var now = Date.now();
@@ -1733,6 +1793,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     drawChart();
   }
 
+  var chartThemeKey = '';
+  var chartColors = { border: '#dcdfe6', muted: '#909399', cyan: '#09c2de' };
+
   function drawChart() {
     var canvas = el.canvas;
     if (!canvas) return;
@@ -1749,11 +1812,17 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
-    var styles = getComputedStyle(document.documentElement);
-    var border = styles.getPropertyValue('--border').trim() || '#dcdfe6';
-    var muted = styles.getPropertyValue('--muted-2').trim() || '#909399';
-    var cyan = styles.getPropertyValue('--cyan').trim() || '#09c2de';
-
+    var themeKey = document.documentElement.getAttribute('data-theme') || 'light';
+    if (themeKey !== chartThemeKey) {
+      var styles = getComputedStyle(document.documentElement);
+      chartColors.border = styles.getPropertyValue('--border').trim() || '#dcdfe6';
+      chartColors.muted = styles.getPropertyValue('--muted-2').trim() || '#909399';
+      chartColors.cyan = styles.getPropertyValue('--cyan').trim() || '#09c2de';
+      chartThemeKey = themeKey;
+    }
+    var border = chartColors.border;
+    var muted = chartColors.muted;
+    var cyan = chartColors.cyan;
     var padL = 34, padR = 8, padT = 12, padB = 16;
     var chartW = Math.max(10, w - padL - padR);
     var chartH = Math.max(10, h - padT - padB);
@@ -1785,35 +1854,68 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     }
 
     var step = samples.length > 1 ? chartW / (samples.length - 1) : chartW;
+    var ptX = function (i) { return padL + (samples.length === 1 ? 0 : i * step); };
+    var ptY = function (i) { return padT + chartH - (samples[i] / max) * chartH; };
     var grad = ctx.createLinearGradient(0, padT, 0, padT + chartH);
     grad.addColorStop(0, 'rgba(9, 194, 222, .28)');
     grad.addColorStop(1, 'rgba(9, 194, 222, 0)');
 
     ctx.beginPath();
     ctx.moveTo(padL, padT + chartH);
-    for (var p = 0; p < samples.length; p++) {
-      var px = padL + (samples.length === 1 ? 0 : p * step);
-      var py = padT + chartH - (samples[p] / max) * chartH;
-      ctx.lineTo(px, py);
-    }
-    var lastX = padL + (samples.length === 1 ? 0 : (samples.length - 1) * step);
-    ctx.lineTo(lastX, padT + chartH);
+    ctx.lineTo(ptX(0), ptY(0));
+    traceCurve(ctx, samples, ptX, ptY);
+    ctx.lineTo(ptX(samples.length - 1), padT + chartH);
     ctx.closePath();
     ctx.fillStyle = grad;
     ctx.fill();
 
+    var glow = ctx.createLinearGradient(padL, 0, padL + chartW, 0);
+    glow.addColorStop(0, 'rgba(9, 194, 222, .35)');
+    glow.addColorStop(1, cyan);
     ctx.beginPath();
-    for (var q = 0; q < samples.length; q++) {
-      var qx = padL + (samples.length === 1 ? 0 : q * step);
-      var qy = padT + chartH - (samples[q] / max) * chartH;
-      if (q === 0) ctx.moveTo(qx, qy);
-      else ctx.lineTo(qx, qy);
-    }
-    ctx.strokeStyle = cyan;
+    ctx.moveTo(ptX(0), ptY(0));
+    traceCurve(ctx, samples, ptX, ptY);
+    ctx.strokeStyle = glow;
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.stroke();
+
+    var endX = ptX(samples.length - 1);
+    var endY = ptY(samples.length - 1);
+    var phase = (Date.now() % 1600) / 1600;
+    ctx.beginPath();
+    ctx.arc(endX, endY, 3 + phase * 5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(9, 194, 222, ' + (0.5 * (1 - phase)).toFixed(3) + ')';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(endX, endY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = cyan;
+    ctx.shadowColor = cyan;
+    ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function traceCurve(ctx, samples, ptX, ptY) {
+    var n = samples.length;
+    if (n === 1) {
+      ctx.lineTo(ptX(0), ptY(0));
+      return;
+    }
+    for (var i = 0; i < n - 1; i++) {
+      var x0 = ptX(i > 0 ? i - 1 : i), y0 = ptY(i > 0 ? i - 1 : i);
+      var x1 = ptX(i), y1 = ptY(i);
+      var x2 = ptX(i + 1), y2 = ptY(i + 1);
+      var x3 = ptX(i + 2 < n ? i + 2 : i + 1), y3 = ptY(i + 2 < n ? i + 2 : i + 1);
+      var t = 0.18;
+      ctx.bezierCurveTo(
+        x1 + (x2 - x0) * t, y1 + (y2 - y0) * t,
+        x2 - (x3 - x1) * t, y2 - (y3 - y1) * t,
+        x2, y2
+      );
+    }
   }
 
   function startTest() {
@@ -1830,6 +1932,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     updateLimit();
     state.running = true;
     state.total = 0;
+    shownMetrics.total = 0;
+    shownMetrics.speed = 0;
+    shownMetrics.avg = 0;
     state.lastBytes = 0;
     state.lastTime = Date.now();
     state.startTime = Date.now();
@@ -1844,6 +1949,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.elements = [];
     state.controller = window.AbortController ? new AbortController() : null;
     el.startButton.classList.add('is-running', 'is-launching');
+    if (el.toolCard) el.toolCard.classList.add('is-running');
     setTimeout(function () { el.startButton.classList.remove('is-launching'); }, 320);
     el.startButton.setAttribute('aria-label', '停止测试');
     setStatus('运行中 · ' + MODE_META[state.mode].short + ' · ' + state.threads + ' 线程', 'running');
@@ -1852,7 +1958,24 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     for (var i = 0; i < state.threads; i++) startWorker();
     state.uiTimer = setInterval(tick, 1000);
     state.chartTimer = setInterval(sample, 1000);
+    startChartAnimation();
     keepAliveSync();
+  }
+
+  function startChartAnimation() {
+    if (state.chartRaf) return;
+    if (state.reducedMotion) { drawChart(); return; }
+    var lastPaint = 0;
+    var loop = function (ts) {
+      if (!state.running) { state.chartRaf = 0; return; }
+      if (ts - lastPaint > 33) {
+        lastPaint = ts;
+        stepMetrics();
+        drawChart();
+      }
+      state.chartRaf = window.requestAnimationFrame(loop);
+    };
+    state.chartRaf = window.requestAnimationFrame(loop);
   }
 
   function stopTest(auto, silent) {
@@ -1876,8 +1999,13 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     clearInterval(state.chartTimer);
     state.uiTimer = null;
     state.chartTimer = null;
+    if (state.chartRaf) {
+      window.cancelAnimationFrame(state.chartRaf);
+      state.chartRaf = 0;
+    }
     state.speedBps = 0;
     el.startButton.classList.remove('is-running');
+    if (el.toolCard) el.toolCard.classList.remove('is-running');
     el.startButton.classList.add('is-stopping');
     setTimeout(function () { el.startButton.classList.remove('is-stopping'); }, 240);
     el.startButton.setAttribute('aria-label', '开始测试');
@@ -2016,6 +2144,10 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   });
 
   el.startButton.addEventListener('click', function () {
+    el.startButton.classList.remove('is-rippling');
+    void el.startButton.offsetWidth;
+    el.startButton.classList.add('is-rippling');
+    setTimeout(function () { el.startButton.classList.remove('is-rippling'); }, 700);
     if (state.running) stopTest(false);
     else startTest();
   });
