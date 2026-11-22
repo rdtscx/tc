@@ -1009,6 +1009,15 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return f.value + ' ' + f.unit + '/s';
   }
 
+  // 目标流量按实际字节精确换算：最多保留 3 位小数，并去掉末尾无意义的 0
+  function formatLimitText(bytes) {
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var v = bytes, i = 0;
+    while (v >= 1024 && i < units.length - 1) { v = v / 1024; i++; }
+    var s = i === 0 ? String(Math.round(v)) : String(Number(v.toFixed(3)));
+    return s + ' ' + units[i];
+  }
+
   function formatClock(ms) {
     var sec = Math.max(0, Math.floor(ms / 1000));
     return pad2(Math.floor(sec / 3600)) + ':' + pad2(Math.floor((sec % 3600) / 60)) + ':' + pad2(sec % 60);
@@ -1089,7 +1098,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   function limitValueOf() {
     var v = parseFloat(el.limitInput.value);
     if (!isFinite(v) || v < 0) return 0;
-    return Math.round(v * 100) / 100;
+    return Math.round(v * 1000) / 1000;
   }
 
   function saveSettings() {
@@ -1133,7 +1142,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.limitUnit = unit;
     el.limitUnit.value = unit;
     var lim = d.v >= 2 ? Number(d.limitValue) : Number(d.limitMb);
-    if (isFinite(lim)) el.limitInput.value = String(Math.max(0, Math.round(lim * 100) / 100));
+    if (isFinite(lim)) el.limitInput.value = String(Math.max(0, Math.round(lim * 1000) / 1000));
     state.autoStart = !!d.autoStart;
     state.keepAlive = !!d.keepAlive;
     el.optAutoStart.checked = state.autoStart;
@@ -1731,7 +1740,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     paintMetrics();
 
     var sub;
-    if (state.limitBytes) sub = '目标 ' + formatBytes(state.limitBytes, 0).value + ' ' + formatBytes(state.limitBytes, 0).unit;
+    if (state.limitBytes) sub = '目标 ' + formatLimitText(state.limitBytes);
     else if (state.running) sub = state.mode === 'element' ? '估算流量 · 持续加载' : '持续下载中';
     else if (state.total) sub = state.mode === 'element' ? '估算流量 · 已停止' : '测试已停止';
     else sub = '等待开始';
