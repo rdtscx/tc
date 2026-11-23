@@ -427,7 +427,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   background-size: 200% 100%;
   animation: top-flow 1.5s linear infinite;
 }
-.metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
 .metric-item {
   min-width: 0;
   padding: 12px 14px;
@@ -435,7 +435,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   border: 1px solid var(--border);
   border-radius: 11px;
 }
-.metric-item + .metric-item { margin-left: 10px; }
 .metric-label { color: var(--muted-2); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; }
 .metric-value { display: block; margin-top: 3px; color: var(--brand); font-size: 23px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .metric-value small { margin-left: 3px; color: var(--muted-2); font-size: 10px; font-weight: 500; letter-spacing: 0; }
@@ -627,8 +626,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .thread-box { width: 100%; flex-basis: auto; }
   .limit-box { flex-basis: auto; width: 100%; margin: 8px 0 0 0; }
   .cap-box { width: 100%; }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .metric-item { padding: 10px 11px; }
-  .metric-item + .metric-item { margin-left: 7px; }
   .metric-value { font-size: 19px; }
   .metric-value small { font-size: 9px; }
   .metric-sub { font-size: 9px; }
@@ -796,6 +795,11 @@ button:focus-visible, input:focus-visible, a:focus-visible {
         <span class="metric-label">平均速度</span>
         <span class="metric-value"><span id="avgValue">0.00</span><small id="avgUnit">MB/s</small></span>
         <span class="metric-sub" id="avgSub">≈ 0.00 Mbps</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">时间</span>
+        <span class="metric-value"><span id="timeValue">00:00:00</span></span>
+        <span class="metric-sub" id="timeSub">未设目标</span>
       </div>
     </div>
 
@@ -970,6 +974,8 @@ var DATA = __DATA__;
     avgValue: document.getElementById('avgValue'),
     avgUnit: document.getElementById('avgUnit'),
     avgSub: document.getElementById('avgSub'),
+    timeValue: document.getElementById('timeValue'),
+    timeSub: document.getElementById('timeSub'),
     runtime: document.getElementById('runtime'),
     requests: document.getElementById('requests'),
     fails: document.getElementById('fails'),
@@ -1042,6 +1048,11 @@ var DATA = __DATA__;
   function formatClock(ms) {
     var sec = Math.max(0, Math.floor(ms / 1000));
     return pad2(Math.floor(sec / 3600)) + ':' + pad2(Math.floor((sec % 3600) / 60)) + ':' + pad2(sec % 60);
+  }
+
+  function formatWallClock(ms) {
+    var d = new Date(ms);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
   }
 
   function toast(text) {
@@ -1908,6 +1919,19 @@ var DATA = __DATA__;
     el.totalSub.textContent = sub;
 
     el.runtime.textContent = formatClock(elapsed);
+    el.timeValue.textContent = formatClock(elapsed);
+    var timeSub;
+    if (state.limitBytes && avg > 0 && state.running) {
+      var remainSeconds = Math.max(0, (state.limitBytes - state.total) / avg);
+      timeSub = '预计 ' + formatWallClock(Date.now() + remainSeconds * 1000) + ' 完成';
+    } else if (state.limitBytes && state.total >= state.limitBytes) {
+      timeSub = '已完成目标';
+    } else if (state.limitBytes) {
+      timeSub = '目标 ' + formatLimitText(state.limitBytes);
+    } else {
+      timeSub = '未设目标';
+    }
+    el.timeSub.textContent = timeSub;
     el.requests.textContent = state.requests;
     el.fails.textContent = state.fails;
   }
