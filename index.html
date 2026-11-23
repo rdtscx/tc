@@ -922,6 +922,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     peakBps: 0,
     requests: 0,
     fails: 0,
+    idleFails: 0,
     samples: [],
     controller: null,
     xhrs: [],
@@ -1541,8 +1542,14 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var unit = UNIT_BYTES[el.capUnit.value] ? el.capUnit.value : 'MB';
     state.capUnit = unit;
     var v = capValueOf();
-    state.capBps = v > 0 ? v * UNIT_BYTES[unit] : 0;
-    capReset();
+    var next = v > 0 ? v * UNIT_BYTES[unit] : 0;
+    state.capBps = next;
+    // 运行中改限速只换速率：清队列会把在途的续读永久挂起，流量就此停住
+    if (state.running) {
+      if (!next) capFlush();
+    } else {
+      capReset();
+    }
     saveSettings();
   }
 
@@ -1551,6 +1558,11 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   }
 
   var XHR_REQUEST_CAP = 16 * 1024 * 1024;
+  // 单次请求上限按线程数分摊：32 线程各留一个 16MB ArrayBuffer 足以让移动端进程崩掉
+  var XHR_TOTAL_BUFFER = 64 * 1024 * 1024;
+  function xhrRequestCap() {
+    return Math.max(2 * 1024 * 1024, Math.min(XHR_REQUEST_CAP, Math.floor(XHR_TOTAL_BUFFER / Math.max(1, state.threads))));
+  }
   // XHR 无法背压，只能靠中断请求限速：已收到但未计入的字节超过这个额度就断开。
   // 额度越小，停止时真实下载量超出目标流量的部分越少，但太小会因频繁重连拉低吞吐
   var CAP_LOOKAHEAD_MS = 800;
@@ -1558,9 +1570,25 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   var CAP_LOOKAHEAD_MAX = 3 * 1024 * 1024;
   var ELEMENT_ESTIMATE = { image: 512 * 1024, video: 2 * 1024 * 1024, audio: 1024 * 1024, script: 256 * 1024, style: 128 * 1024, other: 512 * 1024 };
 
+  // 元素方式靠 Resource Timing 判断请求是否真发出。默认缓冲区只有 250 条，
+  // 写满之后新条目会被丢弃，元素模式就再也拿不到任何记录（总量冻结、无限重试）
+  var RT_LIMIT = 2000;
+  try {
+    if (performance.setResourceTimingBufferSize) performance.setResourceTimingBufferSize(RT_LIMIT);
+  } catch (e) {}
+  if (performance.addEventListener) {
+    performance.addEventListener('resourcetimingbufferfull', function () {
+      try { performance.clearResourceTimings(); } catch (e) {}
+    });
+  }
+  function resourceTimingsFull() {
+    try { return performance.getEntriesByType('resource').length >= RT_LIMIT - 8; } catch (e) { return false; }
+  }
+
   function addBytes(n) {
     if (!n || !state.running) return;
     state.total += n;
+    state.idleFails = 0;
     if (state.limitBytes && state.total >= state.limitBytes) stopTest(true);
   }
 
@@ -1571,18 +1599,34 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   var capDripLast = 0;
   var capPending = 0;
 
+  // 丢积压并唤醒等待者，否则它们的续读链永远悬着
   function capReset() {
+    var queued = capQueue;
     capQueue = [];
     capPending = 0;
     if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
     capDripLast = 0;
+    for (var i = 0; i < queued.length; i++) {
+      if (queued[i].resolve) queued[i].resolve();
+    }
+  }
+
+  // 取消限速：积压一次性计入并放行
+  function capFlush() {
+    var queued = capQueue;
+    capQueue = [];
+    capPending = 0;
+    if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
+    capDripLast = 0;
+    for (var i = 0; i < queued.length; i++) {
+      if (queued[i].bytes > 0) addBytes(queued[i].bytes);
+      if (queued[i].resolve) queued[i].resolve();
+    }
   }
 
   function capDrip() {
-    if (!state.running || !state.capBps) {
-      if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
-      return;
-    }
+    if (!state.running) { capReset(); return; }
+    if (!state.capBps) { capFlush(); return; }
     var now = Date.now();
     var budget = state.capBps * Math.max(0, now - capDripLast) / 1000;
     capDripLast = now;
@@ -1704,14 +1748,18 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       if (!response.ok) throw new Error('HTTP ' + response.status);
       if (!response.body || !response.body.getReader) throw new Error('响应不支持流式读取');
       var reader = response.body.getReader();
+      // cancel() 返回 Promise，已 abort 的流上会 reject AbortError，try/catch 接不住
+      function cancelReader() {
+        try { reader.cancel().catch(function () {}); } catch (e) {}
+      }
       function pump() {
         return reader.read().then(function (result) {
           if (!state.running) {
-            try { reader.cancel(); } catch (e) {}
+            cancelReader();
             return;
           }
           if (result.done) {
-            try { reader.cancel(); } catch (e) {}
+            cancelReader();
             startWorker();
             return;
           }
@@ -1719,7 +1767,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
             // capThrottle 内部按上限匀速计入，返回后直接续读
             return capThrottle(result.value.byteLength).then(function () {
               if (!state.running) {
-                try { reader.cancel(); } catch (e) {}
+                cancelReader();
                 return;
               }
               return pump();
@@ -1739,6 +1787,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.requests++;
     var url = addCacheBuster(state.current.url);
     var xhr = new XMLHttpRequest();
+    var requestCap = xhrRequestCap();
     var lastLoaded = 0;
     var finished = false;
     state.xhrs.push(xhr);
@@ -1783,7 +1832,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
           return;
         }
       }
-      if (loaded >= XHR_REQUEST_CAP) {
+      if (loaded >= requestCap) {
         try { xhr.abort(); } catch (err) {}
       }
     };
@@ -1821,51 +1870,71 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       if (idx >= 0) state.elements.splice(idx, 1);
     }
 
-    function finish() {
+    function finish(loaded) {
       if (done || !state.running) { done = true; cleanup(); return; }
       done = true;
-      if (!hasTimingEntry(finalUrl)) {
-        state.fails++;
+      // 元素方式只能靠 Resource Timing 判断请求是否真的发出；缓冲区写满后条目会消失，
+      // 所以拿不到条目时以加载事件为准，不能判失败（否则总量从此冻结）
+      var actual = lastTransferSize(finalUrl);
+      if (actual > 0 || loaded || hasTimingEntry(finalUrl)) {
+        var base = ELEMENT_ESTIMATE[type] || ELEMENT_ESTIMATE.other;
+        var size = actual > base ? actual : base;
+        state.estimated = true;
         cleanup();
-        if (!state.errorShown && state.total === 0 && state.fails >= Math.max(8, state.threads * 4)) {
-          state.errorShown = true;
-          toast('元素加载没有产生可统计请求，请换图片/视频源或切换下载方式');
-          setStatus('元素加载失败', 'error');
-          stopTest(false, true);
-          return;
-        }
+        // capThrottle 内部按上限匀速计入，完成后再发起下一个
+        capThrottle(size).then(function () {
+          if (!state.running) return;
+          elementWorker();
+        });
+        return;
+      }
+      state.fails++;
+      state.idleFails++;
+      cleanup();
+      if (resourceTimingsFull()) {
+        // 缓冲区写满时拿不到条目不代表请求失败，清空后重试
+        try { performance.clearResourceTimings(); } catch (e) {}
         if (state.running) setTimeout(elementWorker, 600);
         return;
       }
-      var actual = lastTransferSize(finalUrl);
-      var base = ELEMENT_ESTIMATE[type] || ELEMENT_ESTIMATE.other;
-      var size = actual > base ? actual : base;
-      state.estimated = true;
-      cleanup();
-      // capThrottle 内部按上限匀速计入，完成后再发起下一个
-      capThrottle(size).then(function () {
-        if (!state.running) return;
-        elementWorker();
-      });
+      if (!state.errorShown && state.idleFails >= Math.max(8, state.threads * 4)) {
+        state.errorShown = true;
+        toast('元素加载没有产生可统计请求，请换图片/视频源或切换下载方式');
+        setStatus('元素加载失败', 'error');
+        stopTest(false, true);
+        return;
+      }
+      if (state.running) setTimeout(elementWorker, 600);
     }
+
+    function onLoad() { finish(true); }
+    function onFail() { finish(false); }
 
     if (type === 'video' || type === 'audio') {
       node = document.createElement(type);
       node.muted = true;
       node.preload = 'auto';
-      node.onloadeddata = node.onerror = finish;
+      node.onloadeddata = onLoad;
+      node.onerror = onFail;
     } else if (type === 'script' || type === 'style') {
       node = document.createElement('link');
       node.rel = 'preload';
       node.as = type === 'script' ? 'script' : 'style';
-      node.onload = node.onerror = finish;
+      node.onload = onLoad;
+      node.onerror = onFail;
     } else {
       node = new Image();
-      node.onload = node.onerror = finish;
+      node.onload = onLoad;
+      node.onerror = onFail;
     }
     node.style.display = 'none';
     state.elements.push(node);
-    timer = setTimeout(finish, 15000);
+    // 限速时单个资源可能要下很久，超时预算按估算体积与上限放大
+    var budgetMs = 15000;
+    if (state.capBps) {
+      budgetMs += Math.min(180000, (ELEMENT_ESTIMATE[type] || ELEMENT_ESTIMATE.other) / state.capBps * 2000);
+    }
+    timer = setTimeout(function () { finish(false); }, budgetMs);
 
     if (node.tagName === 'LINK') {
       node.href = finalUrl;
@@ -1881,7 +1950,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     if (!state.running) return;
     if (e && e.name === 'AbortError') return;
     state.fails++;
-    if (!state.errorShown && state.total === 0 && state.fails >= Math.max(4, state.threads * 2)) {
+    state.idleFails++;
+    if (!state.errorShown && state.idleFails >= Math.max(4, state.threads * 2)) {
       state.errorShown = true;
       toast('当前源跨域或连接失败，请切换下载方式或选择带 CORS 标记的源');
       setStatus('测速源连接失败', 'error');
@@ -2137,11 +2207,13 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.peakBps = 0;
     state.requests = 0;
     state.fails = 0;
+    state.idleFails = 0;
     state.samples = [];
     state.errorShown = false;
     state.estimated = false;
     state.xhrs = [];
     state.elements = [];
+    try { if (performance.clearResourceTimings) performance.clearResourceTimings(); } catch (e) {}
     state.controller = window.AbortController ? new AbortController() : null;
     el.startButton.classList.add('is-running', 'is-launching');
     if (el.toolCard) el.toolCard.classList.add('is-running');
@@ -2176,6 +2248,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   function stopTest(auto, silent) {
     if (!state.running) return;
     state.running = false;
+    capReset();
     state.lastTime = Date.now();
     if (state.controller) {
       try { state.controller.abort(); } catch (e) {}
