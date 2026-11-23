@@ -1540,9 +1540,11 @@ var DATA = __DATA__;
   }
 
   var XHR_REQUEST_CAP = 16 * 1024 * 1024;
-  // XHR 无法背压，只能靠中断请求限速；欠额超过这个时长才中断，
-  // 否则频繁重连的握手开销会把实际吞吐拉到上限以下
-  var CAP_ABORT_MS = 120;
+  // XHR 无法背压，只能靠中断请求限速：已收到但未计入的字节超过这个额度就断开。
+  // 额度越小，停止时真实下载量超出目标流量的部分越少，但太小会因频繁重连拉低吞吐
+  var CAP_LOOKAHEAD_MS = 800;
+  var CAP_LOOKAHEAD_MIN = 96 * 1024;
+  var CAP_LOOKAHEAD_MAX = 3 * 1024 * 1024;
   var ELEMENT_ESTIMATE = { image: 512 * 1024, video: 2 * 1024 * 1024, audio: 1024 * 1024, script: 256 * 1024, style: 128 * 1024, other: 512 * 1024 };
 
   function addBytes(n) {
@@ -1556,13 +1558,13 @@ var DATA = __DATA__;
   var capQueue = [];
   var capDripTimer = null;
   var capDripLast = 0;
-  var capXhrCursor = 0;
+  var capPending = 0;
 
   function capReset() {
     capQueue = [];
+    capPending = 0;
     if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
     capDripLast = 0;
-    capXhrCursor = 0;
   }
 
   function capDrip() {
@@ -1578,10 +1580,11 @@ var DATA = __DATA__;
       var take = Math.min(head.bytes, budget);
       head.bytes -= take;
       budget -= take;
+      capPending -= take;
       addBytes(take);
       if (head.bytes <= 0) {
         capQueue.shift();
-        head.resolve();
+        if (head.resolve) head.resolve();
       }
       if (!state.running) break;
     }
@@ -1591,28 +1594,46 @@ var DATA = __DATA__;
     }
   }
 
+  function capEnqueue(bytes, resolve) {
+    if (!state.capBps) {
+      if (state.running) addBytes(bytes);
+      if (resolve) resolve();
+      return;
+    }
+    capQueue.push({ bytes: bytes, resolve: resolve });
+    capPending += bytes;
+    if (!capDripTimer) {
+      capDripLast = Date.now();
+      capDripTimer = setInterval(capDrip, 25);
+    }
+  }
+
   // 流式/元素用：字节入队，滴灌完这块字节后兑现
   function capThrottle(bytes) {
     if (!state.capBps) {
       if (state.running) addBytes(bytes);
       return Promise.resolve();
     }
-    return new Promise(function (resolve) {
-      capQueue.push({ bytes: bytes, resolve: resolve });
-      if (!capDripTimer) {
-        capDripLast = Date.now();
-        capDripTimer = setInterval(capDrip, 25);
-      }
-    });
+    return new Promise(function (resolve) { capEnqueue(bytes, resolve); });
   }
 
-  // XHR 无法 await：同步推进游标，返回还需等待的毫秒数
-  function capPlan(bytes) {
+  function capLookaheadBytes() {
     if (!state.capBps) return 0;
-    var now = Date.now();
-    if (capXhrCursor < now) capXhrCursor = now;
-    capXhrCursor += (bytes / state.capBps) * 1000;
-    return Math.max(0, capXhrCursor - now);
+    var byTime = state.capBps * CAP_LOOKAHEAD_MS / 1000;
+    return Math.max(CAP_LOOKAHEAD_MIN, Math.min(CAP_LOOKAHEAD_MAX, byTime));
+  }
+
+  // 积压降到随机水位以下再重连：各线程的阈值不同，重连自然错开，
+  // 不会同时断开、同时空转。保留半满左右的水位，RTT 期间仍有字节可滴灌
+  function capWaitForRoom() {
+    if (!state.capBps || !state.running) return Promise.resolve();
+    var target = capLookaheadBytes() * (0.4 + 0.4 * Math.random());
+    return (function step() {
+      if (!state.running) return Promise.resolve();
+      var over = capPending - target;
+      if (over <= 0) return Promise.resolve();
+      return sleep(Math.min(200, over / state.capBps * 1000)).then(step);
+    })();
   }
 
   function addCacheBuster(url) {
@@ -1709,7 +1730,6 @@ var DATA = __DATA__;
     var xhr = new XMLHttpRequest();
     var lastLoaded = 0;
     var finished = false;
-    var capWait = 0;
     state.xhrs.push(xhr);
 
     function cleanup() {
@@ -1717,10 +1737,24 @@ var DATA = __DATA__;
       if (idx >= 0) state.xhrs.splice(idx, 1);
     }
 
+    // 本次请求的字节全进滴灌队列（不再即时计入），断连后等积压降下来再续下个请求
+    function settle(restart) {
+      cleanup();
+      if (restart) {
+        capWaitForRoom().then(function () { if (state.running) startWorker(); });
+      }
+    }
+
+    function account(size) {
+      if (size <= lastLoaded) return;
+      capEnqueue(size - lastLoaded, null);
+      lastLoaded = size;
+    }
+
     function fail(err) {
       if (finished) return;
       finished = true;
-      cleanup();
+      settle(false);
       if (state.running) handleWorkerError(err || new Error('XHR 请求失败'));
     }
 
@@ -1728,16 +1762,12 @@ var DATA = __DATA__;
     xhr.responseType = 'arraybuffer';
     xhr.timeout = 30000;
     xhr.onprogress = function (e) {
-      if (!state.running) return;
+      if (finished || !state.running) return;
       var loaded = e.loaded || 0;
       if (loaded > lastLoaded) {
-        var delta = loaded - lastLoaded;
-        var wait = capPlan(delta);
-        addBytes(delta);
-        lastLoaded = loaded;
-        if (wait > 0) capWait = wait;
-        // 欠额较大才中断；欠额小时继续读完，重连前等待，避免握手拖低吞吐
-        if (wait > CAP_ABORT_MS) {
+        account(loaded);
+        // 积压超过允许的前瞻额度就断开，剩余字节留给下个请求按额度拉
+        if (capPending > capLookaheadBytes()) {
           try { xhr.abort(); } catch (err) {}
           return;
         }
@@ -1749,29 +1779,17 @@ var DATA = __DATA__;
     xhr.onload = function () {
       if (finished) return;
       finished = true;
-      cleanup();
-      if (!state.running) return;
-      var size = xhr.response ? xhr.response.byteLength : 0;
-      if (size > lastLoaded) {
-        var wait = capPlan(size - lastLoaded);
-        addBytes(size - lastLoaded);
-        if (wait > 0) capWait = wait;
-      }
-      if (!state.running) return;
-      if (capWait > 0) sleep(capWait).then(function () { if (state.running) startWorker(); });
-      else startWorker();
+      if (!state.running) { settle(false); return; }
+      account(xhr.response ? xhr.response.byteLength : 0);
+      settle(true);
     };
     xhr.onerror = function () { fail(new Error('XHR 请求失败')); };
     xhr.ontimeout = function () { fail(new Error('XHR 请求超时')); };
     xhr.onabort = function () {
       if (finished) return;
       finished = true;
-      cleanup();
-      if (!state.running) return;
-      var wait = capWait;
-      capWait = 0;
-      if (wait > 0) sleep(wait).then(function () { if (state.running) startWorker(); });
-      else startWorker();
+      if (!state.running) { settle(false); return; }
+      settle(true);
     };
     try { xhr.send(); } catch (e) { fail(e); }
   }
