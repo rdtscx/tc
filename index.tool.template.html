@@ -303,6 +303,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .settings-row { display: flex; align-items: flex-start; margin-top: 12px; }
 .thread-box { flex: 1; min-width: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .limit-box { flex: 0 0 208px; margin-left: 10px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
+.cap-box { flex: 1; min-width: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .setting-head { display: flex; align-items: center; justify-content: space-between; color: var(--muted-2); font-size: 11px; font-weight: 600; }
 .setting-head b { color: var(--blue); font-size: 13px; font-weight: 700; }
 .range-line { display: flex; align-items: center; margin-top: 7px; }
@@ -625,6 +626,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .settings-row { flex-direction: column; }
   .thread-box { width: 100%; flex-basis: auto; }
   .limit-box { flex-basis: auto; width: 100%; margin: 8px 0 0 0; }
+  .cap-box { width: 100%; }
   .metric-item { padding: 10px 11px; }
   .metric-item + .metric-item { margin-left: 7px; }
   .metric-value { font-size: 19px; }
@@ -754,6 +756,21 @@ button:focus-visible, input:focus-visible, a:focus-visible {
             <option value="MB" selected>MB</option>
             <option value="GB">GB</option>
             <option value="TB">TB</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div class="cap-box">
+        <div class="setting-head"><span>限制上限</span><span>0 = 不限</span></div>
+        <div class="limit-line">
+          <input id="capInput" type="number" min="0" step="0.01" value="0" inputmode="decimal" aria-label="限制上限">
+          <select id="capUnit" aria-label="限速单位">
+            <option value="KB">KB/s</option>
+            <option value="MB" selected>MB/s</option>
+            <option value="GB">GB/s</option>
+            <option value="TB">TB/s</option>
           </select>
         </div>
       </div>
@@ -924,6 +941,8 @@ var DATA = __DATA__;
     autoStart: false,
     keepAlive: false,
     limitUnit: 'MB',
+    capBps: 0,
+    capUnit: 'MB',
     hydrated: false,
     metricTarget: null,
     reducedMotion: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -962,6 +981,8 @@ var DATA = __DATA__;
     threadValueText: document.getElementById('threadValueText'),
     limitInput: document.getElementById('limitInput'),
     limitUnit: document.getElementById('limitUnit'),
+    capInput: document.getElementById('capInput'),
+    capUnit: document.getElementById('capUnit'),
     settingsBtn: document.getElementById('settingsBtn'),
     settingsPopover: document.getElementById('settingsPopover'),
     optAutoStart: document.getElementById('optAutoStart'),
@@ -1101,6 +1122,12 @@ var DATA = __DATA__;
     return Math.round(v * 1000) / 1000;
   }
 
+  function capValueOf() {
+    var v = parseFloat(el.capInput.value);
+    if (!isFinite(v) || v < 0) return 0;
+    return Math.round(v * 1000) / 1000;
+  }
+
   function saveSettings() {
     if (!state.hydrated) return;
     try {
@@ -1113,6 +1140,8 @@ var DATA = __DATA__;
         threads: state.threads,
         limitValue: limitValueOf(),
         limitUnit: state.limitUnit,
+        capValue: capValueOf(),
+        capUnit: state.capUnit,
         autoStart: !!state.autoStart,
         keepAlive: !!state.keepAlive
       }));
@@ -1143,6 +1172,11 @@ var DATA = __DATA__;
     el.limitUnit.value = unit;
     var lim = d.v >= 2 ? Number(d.limitValue) : Number(d.limitMb);
     if (isFinite(lim)) el.limitInput.value = String(Math.max(0, Math.round(lim * 1000) / 1000));
+    var capUnit = UNIT_BYTES[d.capUnit] ? d.capUnit : 'MB';
+    state.capUnit = capUnit;
+    el.capUnit.value = capUnit;
+    var cap = Number(d.capValue);
+    if (isFinite(cap)) el.capInput.value = String(Math.max(0, Math.round(cap * 1000) / 1000));
     state.autoStart = !!d.autoStart;
     state.keepAlive = !!d.keepAlive;
     el.optAutoStart.checked = state.autoStart;
@@ -1158,18 +1192,23 @@ var DATA = __DATA__;
     state.mode = 'stream';
     state.limitBytes = 0;
     state.limitUnit = 'MB';
+    state.capBps = 0;
+    state.capUnit = 'MB';
     state.autoStart = false;
     state.keepAlive = false;
     keepAliveSync();
     el.customUrl.value = '';
     el.limitInput.value = '0';
     el.limitUnit.value = 'MB';
+    el.capInput.value = '0';
+    el.capUnit.value = 'MB';
     el.optAutoStart.checked = false;
     el.optKeepAlive.checked = false;
     setThreads(8);
     updateSourceUI();
     updateModeUI();
     updateLimit();
+    updateCap();
     updateMetrics();
     drawChart();
     el.saveHint.textContent = '已恢复默认设置';
@@ -1487,17 +1526,93 @@ var DATA = __DATA__;
     saveSettings();
   }
 
+  function updateCap() {
+    var unit = UNIT_BYTES[el.capUnit.value] ? el.capUnit.value : 'MB';
+    state.capUnit = unit;
+    var v = capValueOf();
+    state.capBps = v > 0 ? v * UNIT_BYTES[unit] : 0;
+    capReset();
+    saveSettings();
+  }
+
   function sleep(ms) {
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
   }
 
   var XHR_REQUEST_CAP = 16 * 1024 * 1024;
+  // XHR 无法背压，只能靠中断请求限速；欠额超过这个时长才中断，
+  // 否则频繁重连的握手开销会把实际吞吐拉到上限以下
+  var CAP_ABORT_MS = 120;
   var ELEMENT_ESTIMATE = { image: 512 * 1024, video: 2 * 1024 * 1024, audio: 1024 * 1024, script: 256 * 1024, style: 128 * 1024, other: 512 * 1024 };
 
   function addBytes(n) {
     if (!n || !state.running) return;
     state.total += n;
     if (state.limitBytes && state.total >= state.limitBytes) stopTest(true);
+  }
+
+  // 限速核心：字节先进滴灌队列，再由统一计时器按 capBps 匀速计入总量。
+  // 这样显示速度不会冲上限，同时下游 await 形成真实背压。
+  var capQueue = [];
+  var capDripTimer = null;
+  var capDripLast = 0;
+  var capXhrCursor = 0;
+
+  function capReset() {
+    capQueue = [];
+    if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
+    capDripLast = 0;
+    capXhrCursor = 0;
+  }
+
+  function capDrip() {
+    if (!state.running || !state.capBps) {
+      if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
+      return;
+    }
+    var now = Date.now();
+    var budget = state.capBps * Math.max(0, now - capDripLast) / 1000;
+    capDripLast = now;
+    while (budget > 0 && capQueue.length) {
+      var head = capQueue[0];
+      var take = Math.min(head.bytes, budget);
+      head.bytes -= take;
+      budget -= take;
+      addBytes(take);
+      if (head.bytes <= 0) {
+        capQueue.shift();
+        head.resolve();
+      }
+      if (!state.running) break;
+    }
+    if (!capQueue.length && capDripTimer) {
+      clearInterval(capDripTimer);
+      capDripTimer = null;
+    }
+  }
+
+  // 流式/元素用：字节入队，滴灌完这块字节后兑现
+  function capThrottle(bytes) {
+    if (!state.capBps) {
+      if (state.running) addBytes(bytes);
+      return Promise.resolve();
+    }
+    return new Promise(function (resolve) {
+      capQueue.push({ bytes: bytes, resolve: resolve });
+      if (!capDripTimer) {
+        capDripLast = Date.now();
+        capDripTimer = setInterval(capDrip, 25);
+      }
+    });
+  }
+
+  // XHR 无法 await：同步推进游标，返回还需等待的毫秒数
+  function capPlan(bytes) {
+    if (!state.capBps) return 0;
+    var now = Date.now();
+    if (capXhrCursor < now) capXhrCursor = now;
+    capXhrCursor += (bytes / state.capBps) * 1000;
+    return Math.max(0, capXhrCursor - now);
   }
 
   function addCacheBuster(url) {
@@ -1569,8 +1684,14 @@ var DATA = __DATA__;
             return;
           }
           if (result.value && result.value.byteLength) {
-            addBytes(result.value.byteLength);
-            if (!state.running) return;
+            // capThrottle 内部按上限匀速计入，返回后直接续读
+            return capThrottle(result.value.byteLength).then(function () {
+              if (!state.running) {
+                try { reader.cancel(); } catch (e) {}
+                return;
+              }
+              return pump();
+            });
           }
           return pump();
         });
@@ -1588,6 +1709,7 @@ var DATA = __DATA__;
     var xhr = new XMLHttpRequest();
     var lastLoaded = 0;
     var finished = false;
+    var capWait = 0;
     state.xhrs.push(xhr);
 
     function cleanup() {
@@ -1609,8 +1731,16 @@ var DATA = __DATA__;
       if (!state.running) return;
       var loaded = e.loaded || 0;
       if (loaded > lastLoaded) {
-        addBytes(loaded - lastLoaded);
+        var delta = loaded - lastLoaded;
+        var wait = capPlan(delta);
+        addBytes(delta);
         lastLoaded = loaded;
+        if (wait > 0) capWait = wait;
+        // 欠额较大才中断；欠额小时继续读完，重连前等待，避免握手拖低吞吐
+        if (wait > CAP_ABORT_MS) {
+          try { xhr.abort(); } catch (err) {}
+          return;
+        }
       }
       if (loaded >= XHR_REQUEST_CAP) {
         try { xhr.abort(); } catch (err) {}
@@ -1622,8 +1752,14 @@ var DATA = __DATA__;
       cleanup();
       if (!state.running) return;
       var size = xhr.response ? xhr.response.byteLength : 0;
-      if (size > lastLoaded) addBytes(size - lastLoaded);
-      if (state.running) startWorker();
+      if (size > lastLoaded) {
+        var wait = capPlan(size - lastLoaded);
+        addBytes(size - lastLoaded);
+        if (wait > 0) capWait = wait;
+      }
+      if (!state.running) return;
+      if (capWait > 0) sleep(capWait).then(function () { if (state.running) startWorker(); });
+      else startWorker();
     };
     xhr.onerror = function () { fail(new Error('XHR 请求失败')); };
     xhr.ontimeout = function () { fail(new Error('XHR 请求超时')); };
@@ -1631,7 +1767,11 @@ var DATA = __DATA__;
       if (finished) return;
       finished = true;
       cleanup();
-      if (state.running) startWorker();
+      if (!state.running) return;
+      var wait = capWait;
+      capWait = 0;
+      if (wait > 0) sleep(wait).then(function () { if (state.running) startWorker(); });
+      else startWorker();
     };
     try { xhr.send(); } catch (e) { fail(e); }
   }
@@ -1672,9 +1812,12 @@ var DATA = __DATA__;
       var base = ELEMENT_ESTIMATE[type] || ELEMENT_ESTIMATE.other;
       var size = actual > base ? actual : base;
       state.estimated = true;
-      addBytes(size);
       cleanup();
-      if (state.running) setTimeout(elementWorker, 40);
+      // capThrottle 内部按上限匀速计入，完成后再发起下一个
+      capThrottle(size).then(function () {
+        if (!state.running) return;
+        elementWorker();
+      });
     }
 
     if (type === 'video' || type === 'audio') {
@@ -1939,6 +2082,7 @@ var DATA = __DATA__;
       return;
     }
     updateLimit();
+    updateCap();
     state.running = true;
     state.total = 0;
     shownMetrics.total = 0;
@@ -2169,6 +2313,13 @@ var DATA = __DATA__;
     updateLimit();
   });
   el.limitUnit.addEventListener('change', function () { updateLimit(); });
+  el.capInput.addEventListener('input', updateCap);
+  el.capInput.addEventListener('blur', function () {
+    var v = capValueOf();
+    if (String(v) !== el.capInput.value) el.capInput.value = String(v);
+    updateCap();
+  });
+  el.capUnit.addEventListener('change', function () { updateCap(); });
   el.customUrl.addEventListener('input', saveSettings);
   document.getElementById('resetSettings').addEventListener('click', resetSettings);
 
