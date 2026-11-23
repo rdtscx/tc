@@ -303,7 +303,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .settings-row { display: flex; align-items: flex-start; margin-top: 12px; }
 .thread-box { flex: 1; min-width: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .limit-box { flex: 0 0 208px; margin-left: 10px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
-.cap-box { flex: 1; min-width: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; }
 .setting-head { display: flex; align-items: center; justify-content: space-between; color: var(--muted-2); font-size: 11px; font-weight: 600; }
 .setting-head b { color: var(--blue); font-size: 13px; font-weight: 700; }
 .range-line { display: flex; align-items: center; margin-top: 7px; }
@@ -625,7 +624,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .settings-row { flex-direction: column; }
   .thread-box { width: 100%; flex-basis: auto; }
   .limit-box { flex-basis: auto; width: 100%; margin: 8px 0 0 0; }
-  .cap-box { width: 100%; }
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .metric-item { padding: 10px 11px; }
   .metric-value { font-size: 19px; }
@@ -755,21 +753,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
             <option value="MB" selected>MB</option>
             <option value="GB">GB</option>
             <option value="TB">TB</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-row">
-      <div class="cap-box">
-        <div class="setting-head"><span>限制上限</span><span>0 = 不限</span></div>
-        <div class="limit-line">
-          <input id="capInput" type="number" min="0" step="0.01" value="0" inputmode="decimal" aria-label="限制上限">
-          <select id="capUnit" aria-label="限速单位">
-            <option value="KB">KB/s</option>
-            <option value="MB" selected>MB/s</option>
-            <option value="GB">GB/s</option>
-            <option value="TB">TB/s</option>
           </select>
         </div>
       </div>
@@ -946,8 +929,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     autoStart: false,
     keepAlive: false,
     limitUnit: 'MB',
-    capBps: 0,
-    capUnit: 'MB',
     hydrated: false,
     metricTarget: null,
     reducedMotion: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -988,8 +969,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     threadValueText: document.getElementById('threadValueText'),
     limitInput: document.getElementById('limitInput'),
     limitUnit: document.getElementById('limitUnit'),
-    capInput: document.getElementById('capInput'),
-    capUnit: document.getElementById('capUnit'),
     settingsBtn: document.getElementById('settingsBtn'),
     settingsPopover: document.getElementById('settingsPopover'),
     optAutoStart: document.getElementById('optAutoStart'),
@@ -1134,12 +1113,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     return Math.round(v * 1000) / 1000;
   }
 
-  function capValueOf() {
-    var v = parseFloat(el.capInput.value);
-    if (!isFinite(v) || v < 0) return 0;
-    return Math.round(v * 1000) / 1000;
-  }
-
   function saveSettings() {
     if (!state.hydrated) return;
     try {
@@ -1152,8 +1125,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
         threads: state.threads,
         limitValue: limitValueOf(),
         limitUnit: state.limitUnit,
-        capValue: capValueOf(),
-        capUnit: state.capUnit,
         autoStart: !!state.autoStart,
         keepAlive: !!state.keepAlive
       }));
@@ -1184,11 +1155,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.limitUnit.value = unit;
     var lim = d.v >= 2 ? Number(d.limitValue) : Number(d.limitMb);
     if (isFinite(lim)) el.limitInput.value = String(Math.max(0, Math.round(lim * 1000) / 1000));
-    var capUnit = UNIT_BYTES[d.capUnit] ? d.capUnit : 'MB';
-    state.capUnit = capUnit;
-    el.capUnit.value = capUnit;
-    var cap = Number(d.capValue);
-    if (isFinite(cap)) el.capInput.value = String(Math.max(0, Math.round(cap * 1000) / 1000));
     state.autoStart = !!d.autoStart;
     state.keepAlive = !!d.keepAlive;
     el.optAutoStart.checked = state.autoStart;
@@ -1204,23 +1170,18 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.mode = 'stream';
     state.limitBytes = 0;
     state.limitUnit = 'MB';
-    state.capBps = 0;
-    state.capUnit = 'MB';
     state.autoStart = false;
     state.keepAlive = false;
     keepAliveSync();
     el.customUrl.value = '';
     el.limitInput.value = '0';
     el.limitUnit.value = 'MB';
-    el.capInput.value = '0';
-    el.capUnit.value = 'MB';
     el.optAutoStart.checked = false;
     el.optKeepAlive.checked = false;
     setThreads(8);
     updateSourceUI();
     updateModeUI();
     updateLimit();
-    updateCap();
     updateMetrics();
     drawChart();
     el.saveHint.textContent = '已恢复默认设置';
@@ -1538,21 +1499,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     saveSettings();
   }
 
-  function updateCap() {
-    var unit = UNIT_BYTES[el.capUnit.value] ? el.capUnit.value : 'MB';
-    state.capUnit = unit;
-    var v = capValueOf();
-    var next = v > 0 ? v * UNIT_BYTES[unit] : 0;
-    state.capBps = next;
-    // 运行中改限速只换速率：清队列会把在途的续读永久挂起，流量就此停住
-    if (state.running) {
-      if (!next) capFlush();
-    } else {
-      capReset();
-    }
-    saveSettings();
-  }
-
   function sleep(ms) {
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
   }
@@ -1561,13 +1507,14 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   // 单次请求上限按线程数分摊：32 线程各留一个 16MB ArrayBuffer 足以让移动端进程崩掉
   var XHR_TOTAL_BUFFER = 64 * 1024 * 1024;
   function xhrRequestCap() {
-    return Math.max(2 * 1024 * 1024, Math.min(XHR_REQUEST_CAP, Math.floor(XHR_TOTAL_BUFFER / Math.max(1, state.threads))));
+    var cap = Math.max(2 * 1024 * 1024, Math.min(XHR_REQUEST_CAP, Math.floor(XHR_TOTAL_BUFFER / Math.max(1, state.threads))));
+    if (state.limitBytes) {
+      // 进度事件粒度是几十 KB，按剩余额度均分给线程才能让总量停在目标附近
+      var share = Math.ceil((state.limitBytes - state.total) / Math.max(1, state.threads));
+      cap = Math.min(cap, Math.max(1, share));
+    }
+    return cap;
   }
-  // XHR 无法背压，只能靠中断请求限速：已收到但未计入的字节超过这个额度就断开。
-  // 额度越小，停止时真实下载量超出目标流量的部分越少，但太小会因频繁重连拉低吞吐
-  var CAP_LOOKAHEAD_MS = 800;
-  var CAP_LOOKAHEAD_MIN = 96 * 1024;
-  var CAP_LOOKAHEAD_MAX = 3 * 1024 * 1024;
   var ELEMENT_ESTIMATE = { image: 512 * 1024, video: 2 * 1024 * 1024, audio: 1024 * 1024, script: 256 * 1024, style: 128 * 1024, other: 512 * 1024 };
 
   // 元素方式靠 Resource Timing 判断请求是否真发出。默认缓冲区只有 250 条，
@@ -1587,108 +1534,14 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
 
   function addBytes(n) {
     if (!n || !state.running) return;
+    if (state.limitBytes) {
+      var remain = state.limitBytes - state.total;
+      if (remain <= 0) return;
+      if (n > remain) n = remain;
+    }
     state.total += n;
     state.idleFails = 0;
     if (state.limitBytes && state.total >= state.limitBytes) stopTest(true);
-  }
-
-  // 限速核心：字节先进滴灌队列，再由统一计时器按 capBps 匀速计入总量。
-  // 这样显示速度不会冲上限，同时下游 await 形成真实背压。
-  var capQueue = [];
-  var capDripTimer = null;
-  var capDripLast = 0;
-  var capPending = 0;
-
-  // 丢积压并唤醒等待者，否则它们的续读链永远悬着
-  function capReset() {
-    var queued = capQueue;
-    capQueue = [];
-    capPending = 0;
-    if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
-    capDripLast = 0;
-    for (var i = 0; i < queued.length; i++) {
-      if (queued[i].resolve) queued[i].resolve();
-    }
-  }
-
-  // 取消限速：积压一次性计入并放行
-  function capFlush() {
-    var queued = capQueue;
-    capQueue = [];
-    capPending = 0;
-    if (capDripTimer) { clearInterval(capDripTimer); capDripTimer = null; }
-    capDripLast = 0;
-    for (var i = 0; i < queued.length; i++) {
-      if (queued[i].bytes > 0) addBytes(queued[i].bytes);
-      if (queued[i].resolve) queued[i].resolve();
-    }
-  }
-
-  function capDrip() {
-    if (!state.running) { capReset(); return; }
-    if (!state.capBps) { capFlush(); return; }
-    var now = Date.now();
-    var budget = state.capBps * Math.max(0, now - capDripLast) / 1000;
-    capDripLast = now;
-    while (budget > 0 && capQueue.length) {
-      var head = capQueue[0];
-      var take = Math.min(head.bytes, budget);
-      head.bytes -= take;
-      budget -= take;
-      capPending -= take;
-      addBytes(take);
-      if (head.bytes <= 0) {
-        capQueue.shift();
-        if (head.resolve) head.resolve();
-      }
-      if (!state.running) break;
-    }
-    if (!capQueue.length && capDripTimer) {
-      clearInterval(capDripTimer);
-      capDripTimer = null;
-    }
-  }
-
-  function capEnqueue(bytes, resolve) {
-    if (!state.capBps) {
-      if (state.running) addBytes(bytes);
-      if (resolve) resolve();
-      return;
-    }
-    capQueue.push({ bytes: bytes, resolve: resolve });
-    capPending += bytes;
-    if (!capDripTimer) {
-      capDripLast = Date.now();
-      capDripTimer = setInterval(capDrip, 25);
-    }
-  }
-
-  // 流式/元素用：字节入队，滴灌完这块字节后兑现
-  function capThrottle(bytes) {
-    if (!state.capBps) {
-      if (state.running) addBytes(bytes);
-      return Promise.resolve();
-    }
-    return new Promise(function (resolve) { capEnqueue(bytes, resolve); });
-  }
-
-  function capLookaheadBytes() {
-    if (!state.capBps) return 0;
-    var byTime = state.capBps * CAP_LOOKAHEAD_MS / 1000;
-    return Math.max(CAP_LOOKAHEAD_MIN, Math.min(CAP_LOOKAHEAD_MAX, byTime));
-  }
-
-  // 积压降到随机水位以下再重连：各线程的阈值不同，重连自然错开，
-  // 不会同时断开、同时空转。保留半满左右的水位，RTT 期间仍有字节可滴灌
-  function capWaitForRoom() {
-    if (!state.capBps || !state.running) return Promise.resolve();
-    var target = capLookaheadBytes() * (0.4 + 0.4 * Math.random());
-    return (function step() {
-      if (!state.running) return Promise.resolve();
-      var over = capPending - target;
-      if (over <= 0) return Promise.resolve();
-      return sleep(Math.min(200, over / state.capBps * 1000)).then(step);
-    })();
   }
 
   function addCacheBuster(url) {
@@ -1764,14 +1617,12 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
             return;
           }
           if (result.value && result.value.byteLength) {
-            // capThrottle 内部按上限匀速计入，返回后直接续读
-            return capThrottle(result.value.byteLength).then(function () {
-              if (!state.running) {
-                cancelReader();
-                return;
-              }
-              return pump();
-            });
+            addBytes(result.value.byteLength);
+            if (!state.running) {
+              cancelReader();
+              return;
+            }
+            return pump();
           }
           return pump();
         });
@@ -1797,17 +1648,17 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       if (idx >= 0) state.xhrs.splice(idx, 1);
     }
 
-    // 本次请求的字节全进滴灌队列（不再即时计入），断连后等积压降下来再续下个请求
+    // 本次请求的字节在进度回调里直接计入，断连后续下个请求
     function settle(restart) {
       cleanup();
       if (restart) {
-        capWaitForRoom().then(function () { if (state.running) startWorker(); });
+        if (state.running) startWorker();
       }
     }
 
     function account(size) {
       if (size <= lastLoaded) return;
-      capEnqueue(size - lastLoaded, null);
+      addBytes(size - lastLoaded);
       lastLoaded = size;
     }
 
@@ -1826,11 +1677,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       var loaded = e.loaded || 0;
       if (loaded > lastLoaded) {
         account(loaded);
-        // 积压超过允许的前瞻额度就断开，剩余字节留给下个请求按额度拉
-        if (capPending > capLookaheadBytes()) {
-          try { xhr.abort(); } catch (err) {}
-          return;
-        }
       }
       if (loaded >= requestCap) {
         try { xhr.abort(); } catch (err) {}
@@ -1881,11 +1727,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
         var size = actual > base ? actual : base;
         state.estimated = true;
         cleanup();
-        // capThrottle 内部按上限匀速计入，完成后再发起下一个
-        capThrottle(size).then(function () {
-          if (!state.running) return;
-          elementWorker();
-        });
+        addBytes(size);
+        if (state.running) elementWorker();
         return;
       }
       state.fails++;
@@ -1929,11 +1772,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     }
     node.style.display = 'none';
     state.elements.push(node);
-    // 限速时单个资源可能要下很久，超时预算按估算体积与上限放大
     var budgetMs = 15000;
-    if (state.capBps) {
-      budgetMs += Math.min(180000, (ELEMENT_ESTIMATE[type] || ELEMENT_ESTIMATE.other) / state.capBps * 2000);
-    }
     timer = setTimeout(function () { finish(false); }, budgetMs);
 
     if (node.tagName === 'LINK') {
@@ -2194,7 +2033,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       return;
     }
     updateLimit();
-    updateCap();
     state.running = true;
     state.total = 0;
     shownMetrics.total = 0;
@@ -2248,7 +2086,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
   function stopTest(auto, silent) {
     if (!state.running) return;
     state.running = false;
-    capReset();
     state.lastTime = Date.now();
     if (state.controller) {
       try { state.controller.abort(); } catch (e) {}
@@ -2428,13 +2265,6 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     updateLimit();
   });
   el.limitUnit.addEventListener('change', function () { updateLimit(); });
-  el.capInput.addEventListener('input', updateCap);
-  el.capInput.addEventListener('blur', function () {
-    var v = capValueOf();
-    if (String(v) !== el.capInput.value) el.capInput.value = String(v);
-    updateCap();
-  });
-  el.capUnit.addEventListener('change', function () { updateCap(); });
   el.customUrl.addEventListener('input', saveSettings);
   document.getElementById('resetSettings').addEventListener('click', resetSettings);
 
