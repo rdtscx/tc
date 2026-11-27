@@ -780,7 +780,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
         <span class="metric-sub" id="avgSub">≈ 0.00 Mbps</span>
       </div>
       <div class="metric-item">
-        <span class="metric-label">时间</span>
+        <span class="metric-label" id="timeLabel">时间</span>
         <span class="metric-value"><span id="timeValue">00:00:00</span></span>
         <span class="metric-sub" id="timeSub">未设目标</span>
       </div>
@@ -959,6 +959,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     timeValue: document.getElementById('timeValue'),
     timeSub: document.getElementById('timeSub'),
     runtime: document.getElementById('runtime'),
+    timeLabel: document.getElementById('timeLabel'),
     requests: document.getElementById('requests'),
     fails: document.getElementById('fails'),
     statusText: document.getElementById('statusText'),
@@ -1828,17 +1829,34 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.totalSub.textContent = sub;
 
     el.runtime.textContent = formatClock(elapsed);
-    el.timeValue.textContent = formatClock(elapsed);
+
+    // 设了目标流量时，「时间」改为到达目标的剩余用时倒计时；未设目标才显示已用时长
     var timeSub;
-    if (state.limitBytes && avg > 0 && state.running) {
-      var remainSeconds = Math.max(0, (state.limitBytes - state.total) / avg);
-      timeSub = '预计 ' + formatWallClock(Date.now() + remainSeconds * 1000) + ' 完成';
-    } else if (state.limitBytes && state.total >= state.limitBytes) {
-      timeSub = '已完成目标';
-    } else if (state.limitBytes) {
-      timeSub = '目标 ' + formatLimitText(state.limitBytes);
+    if (state.limitBytes) {
+      el.timeLabel.textContent = '剩余时间';
+      var remainBytes = Math.max(0, state.limitBytes - state.total);
+      if (state.total >= state.limitBytes) {
+        el.timeValue.textContent = formatClock(0);
+        timeSub = '已完成目标 · 已用 ' + formatClock(elapsed);
+      } else if (state.running && avg > 0) {
+        var remainMs = remainBytes / avg * 1000;
+        el.timeValue.textContent = formatClock(remainMs);
+        timeSub = '已用 ' + formatClock(elapsed) + ' · 预计 ' +
+          formatWallClock(Date.now() + remainMs) + ' 完成';
+      } else if (avg > 0) {
+        // 暂停或中断：仍按当前平均速度给出剩余量，标注为停止时的估算
+        el.timeValue.textContent = formatClock(remainBytes / avg * 1000);
+        timeSub = '已用 ' + formatClock(elapsed) + ' · 停止时估算';
+      } else {
+        el.timeValue.textContent = '--:--:--';
+        timeSub = '待测速后估算';
+      }
     } else {
-      timeSub = '未设目标';
+      el.timeLabel.textContent = '时间';
+      el.timeValue.textContent = formatClock(elapsed);
+      if (state.running) timeSub = state.mode === 'element' ? '估算流量 · 持续加载' : '持续下载中';
+      else if (state.total) timeSub = state.mode === 'element' ? '估算流量 · 已停止' : '测试已停止';
+      else timeSub = '未设目标';
     }
     el.timeSub.textContent = timeSub;
     el.requests.textContent = state.requests;
