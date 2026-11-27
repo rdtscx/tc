@@ -1498,6 +1498,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var v = limitValueOf();
     state.limitBytes = v > 0 ? Math.round(v * UNIT_BYTES[unit]) : 0;
     saveSettings();
+    // 改目标流量后立刻切换「时间 / 剩余时间」标签，不必等到下一次计时刷新
+    if (!state.running) updateMetrics();
   }
 
   function sleep(ms) {
