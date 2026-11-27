@@ -512,6 +512,9 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .chart-legend::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; background: var(--muted-2); border-radius: 50%; vertical-align: 1px; transition: background .2s ease; }
 .tool-card.is-running .chart-legend::before { background: var(--cyan); animation: dot-pulse-cyan 1.8s ease-out infinite; }
 .chart-legend b { color: var(--cyan); font-weight: 700; }
+.chart-foot { margin-top: 6px; color: var(--muted-2); font-size: 10.5px; line-height: 1.6; }
+.chart-foot b { color: var(--cyan); font-weight: 700; }
+.chart-foot.is-live b { color: var(--cyan); }
 .library-card {
   margin-top: 14px;
   padding: 22px 24px 18px;
@@ -800,9 +803,10 @@ button:focus-visible, input:focus-visible, a:focus-visible {
     </div>
 
     <div class="chart-wrap">
-      <canvas id="speedChart" aria-label="实时速度曲线"></canvas>
-      <div class="chart-legend">实时速度 <b>MB/s</b></div>
+      <canvas id="speedChart" aria-label="前 60 秒每秒速率曲线，带时间刻度"></canvas>
+      <div class="chart-legend">每秒速率 <b>MB/s</b></div>
     </div>
+    <div class="chart-foot" id="rateNote">倒计时基准：未设目标流量</div>
   </section>
 
   <section class="library-card">
@@ -907,6 +911,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     fails: 0,
     idleFails: 0,
     samples: [],
+    secBytes: 0,
+    secTime: 0,
     controller: null,
     xhrs: [],
     elements: [],
@@ -981,6 +987,7 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     customLink: document.getElementById('customLink'),
     customName: document.getElementById('customName'),
     canvas: document.getElementById('speedChart'),
+    rateNote: document.getElementById('rateNote'),
     toolCard: document.querySelector('.tool-card'),
     linkList: document.getElementById('linkList'),
     libraryChips: document.getElementById('libraryChips'),
@@ -1833,6 +1840,9 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     el.runtime.textContent = formatClock(elapsed);
 
     // 设了目标流量时，「时间」改为到达目标的剩余用时倒计时；未设目标才显示已用时长
+    // 倒计时用的速率不是原始平均速度：满 10 秒改用最近 10 秒去掉 2 高 2 低的均值，满 60 秒改用 60 秒窗口
+    var stable = state.limitBytes ? trimmedRateBps() : 0;
+    var rate = stable > 0 ? stable : avg;
     var timeSub;
     if (state.limitBytes) {
       el.timeLabel.textContent = '剩余时间';
@@ -1840,14 +1850,14 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       if (state.total >= state.limitBytes) {
         el.timeValue.textContent = formatClock(0);
         timeSub = '已完成目标 · 已用 ' + formatClock(elapsed);
-      } else if (state.running && avg > 0) {
-        var remainMs = remainBytes / avg * 1000;
+      } else if (state.running && rate > 0) {
+        var remainMs = remainBytes / rate * 1000;
         el.timeValue.textContent = formatClock(remainMs);
         timeSub = '已用 ' + formatClock(elapsed) + ' · 预计 ' +
           formatWallClock(Date.now() + remainMs) + ' 完成';
-      } else if (avg > 0) {
-        // 暂停或中断：仍按当前平均速度给出剩余量，标注为停止时的估算
-        el.timeValue.textContent = formatClock(remainBytes / avg * 1000);
+      } else if (rate > 0) {
+        // 暂停或中断：仍按当前稳定速率给出剩余量，标注为停止时的估算
+        el.timeValue.textContent = formatClock(remainBytes / rate * 1000);
         timeSub = '已用 ' + formatClock(elapsed) + ' · 停止时估算';
       } else {
         el.timeValue.textContent = '--:--:--';
@@ -1861,6 +1871,19 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       else timeSub = '未设目标';
     }
     el.timeSub.textContent = timeSub;
+
+    if (el.rateNote) {
+      var win = state.limitBytes ? trimmedWindowSize() : 0;
+      if (!state.limitBytes) {
+        el.rateNote.innerHTML = '倒计时基准：未设目标流量，图表显示最近 60 秒每秒速率';
+      } else if (win) {
+        el.rateNote.innerHTML = '倒计时基准 <b>' + (stable / 1048576).toFixed(2) +
+          ' MB/s</b> · 最近 ' + win + ' 秒去极值（去掉最高 2、最低 2，保留 ' + (win - 4) + ' 个）';
+      } else {
+        el.rateNote.innerHTML = '倒计时基准：未满 10 秒，暂用平均速度 <b>' +
+          (avg / 1048576).toFixed(2) + ' MB/s</b>';
+      }
+    }
     el.requests.textContent = state.requests;
     el.fails.textContent = state.fails;
   }
@@ -1909,11 +1932,39 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     updateMetrics();
   }
 
+  // 每秒把「这一秒实际收到的字节」换算成速率入队，最多保留 60 秒，用于图表和倒计时
   function sample() {
     if (!state.running) return;
-    state.samples.push(state.speedBps / 1048576);
-    if (state.samples.length > 120) state.samples.shift();
+    var now = Date.now();
+    var dt = state.secTime ? (now - state.secTime) / 1000 : 1;
+    if (dt <= 0) dt = 1;
+    var delta = Math.max(0, state.total - state.secBytes);
+    var rate = delta / dt;
+    state.secBytes = state.total;
+    state.secTime = now;
+    state.samples.push(rate / 1048576);
+    if (state.samples.length > 60) state.samples.shift();
+    updateMetrics();
     drawChart();
+  }
+
+  // 倒计时窗口：满 10 秒用 10 秒窗口，满 60 秒后改用 60 秒窗口（都为最近窗口）
+  function trimmedWindowSize() {
+    var n = state.samples.length;
+    if (n < 10) return 0;
+    return n >= 60 ? 60 : 10;
+  }
+
+  // 去掉窗口内最高 2 个、最低 2 个速率后的均值（10 秒窗口剩 6 个，60 秒窗口剩 56 个）
+  function trimmedRateBps() {
+    var win = trimmedWindowSize();
+    if (!win) return 0;
+    var arr = state.samples.slice(state.samples.length - win).sort(function (a, b) { return a - b; });
+    var keep = arr.slice(2, arr.length - 2);
+    if (!keep.length) return 0;
+    var sum = 0;
+    for (var i = 0; i < keep.length; i++) sum += keep[i];
+    return (sum / keep.length) * 1048576;
   }
 
   var chartThemeKey = '';
@@ -1946,18 +1997,25 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     var border = chartColors.border;
     var muted = chartColors.muted;
     var cyan = chartColors.cyan;
-    var padL = 34, padR = 8, padT = 12, padB = 16;
+    var padL = 36, padR = 12, padT = 12, padB = 20;
     var chartW = Math.max(10, w - padL - padR);
     var chartH = Math.max(10, h - padT - padB);
     var samples = state.samples;
+    var elapsedMs = state.running ? Date.now() - state.startTime : (state.startTime ? state.lastTime - state.startTime : 0);
+    var elapsedSec = Math.max(0, Math.floor(elapsedMs / 1000));
+    var stableMB = trimmedRateBps() / 1048576;
     var max = 1;
     for (var i = 0; i < samples.length; i++) if (samples[i] > max) max = samples[i];
-    max = max * 1.15;
+    if (stableMB > max) max = stableMB;
+    max = max * 1.18;
+
+    var xAt = function (sec) { return padL + chartW * (sec / 60); };
 
     ctx.strokeStyle = border;
     ctx.lineWidth = 1;
     ctx.font = '9px "Helvetica Neue", Arial, sans-serif';
     ctx.fillStyle = muted;
+
     for (var g = 0; g <= 4; g++) {
       var y = padT + chartH * g / 4;
       ctx.beginPath();
@@ -1965,22 +2023,47 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
       ctx.lineTo(padL + chartW, y);
       ctx.stroke();
       var val = max * (1 - g / 4);
-      ctx.fillText(val.toFixed(val >= 10 ? 0 : 1), 2, y + 3);
+      ctx.textAlign = 'right';
+      ctx.fillText(val.toFixed(val >= 10 ? 0 : 1), padL - 4, y + 3);
+      ctx.textAlign = 'left';
+    }
+
+    // 时间刻度：第一分钟 0s→60s 逐秒递进；超过 60 秒后窗口滚动为 -60s→现在
+    for (var sec = 0; sec <= 60; sec += 10) {
+      var tx = xAt(sec);
+      ctx.beginPath();
+      ctx.moveTo(tx, padT);
+      ctx.lineTo(tx, padT + chartH);
+      ctx.stroke();
+      var label;
+      if (elapsedSec > 60) label = sec === 60 ? '现在' : '-' + (60 - sec) + 's';
+      else label = sec + 's';
+      ctx.textAlign = sec === 0 ? 'left' : (sec === 60 ? 'right' : 'center');
+      ctx.fillText(label, tx, padT + chartH + 12);
+      ctx.textAlign = 'left';
     }
 
     if (!samples.length) {
       ctx.fillStyle = muted;
       ctx.textAlign = 'center';
-      ctx.fillText(state.running ? '正在采集速度…' : '开始测试后显示实时速度曲线', padL + chartW / 2, padT + chartH / 2);
-      ctx.textAlign = 'start';
+      ctx.fillText(state.running ? '正在采集第 1 秒…' : '开始测试后按秒记录，前 60 秒逐秒递进',
+        padL + chartW / 2, padT + chartH / 2);
+      ctx.textAlign = 'left';
       return;
     }
 
-    var step = samples.length > 1 ? chartW / (samples.length - 1) : chartW;
-    var ptX = function (i) { return padL + (samples.length === 1 ? 0 : i * step); };
+    // 每秒一根柱，60 个槽位固定
+    var slot = chartW / 60;
+    ctx.fillStyle = 'rgba(9, 194, 222, .16)';
+    for (var b = 0; b < samples.length; b++) {
+      var bh = (samples[b] / max) * chartH;
+      if (bh > 0.5) ctx.fillRect(padL + b * slot + 0.5, padT + chartH - bh, Math.max(1, slot - 1), bh);
+    }
+
+    var ptX = function (i) { return padL + chartW * ((i + 1) / 60); };
     var ptY = function (i) { return padT + chartH - (samples[i] / max) * chartH; };
     var grad = ctx.createLinearGradient(0, padT, 0, padT + chartH);
-    grad.addColorStop(0, 'rgba(9, 194, 222, .28)');
+    grad.addColorStop(0, 'rgba(9, 194, 222, .30)');
     grad.addColorStop(1, 'rgba(9, 194, 222, 0)');
 
     ctx.beginPath();
@@ -2004,6 +2087,24 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     ctx.lineCap = 'round';
     ctx.stroke();
 
+    // 倒计时用的去极值速率，虚线标出，便于对照波动
+    if (stableMB > 0) {
+      var sy = padT + chartH - (stableMB / max) * chartH;
+      ctx.save();
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = 'rgba(9, 194, 222, .78)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padL, sy);
+      ctx.lineTo(padL + chartW, sy);
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = cyan;
+      ctx.textAlign = 'left';
+      ctx.fillText('基准 ' + stableMB.toFixed(2) + ' MB/s', padL + 3, sy - 4);
+      ctx.textAlign = 'left';
+    }
+
     var endX = ptX(samples.length - 1);
     var endY = ptY(samples.length - 1);
     var phase = (Date.now() % 1600) / 1600;
@@ -2017,6 +2118,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     ctx.fillStyle = cyan;
     ctx.shadowColor = cyan;
     ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.fill();
     ctx.shadowBlur = 0;
   }
@@ -2067,6 +2170,8 @@ var DATA = {"sites":[{"badge":"主","name":"白云网络面板","host":"net.whit
     state.fails = 0;
     state.idleFails = 0;
     state.samples = [];
+    state.secBytes = 0;
+    state.secTime = Date.now();
     state.errorShown = false;
     state.estimated = false;
     state.xhrs = [];
